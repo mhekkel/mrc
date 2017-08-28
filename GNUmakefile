@@ -82,7 +82,13 @@ $(OBJDIR):
 clean:
 	rm -rf $(OBJDIR)/* mrc
 
-mrc: $(OBJECTS)
+mrc-mini: $(OBJECTS) $(OBJDIR)/dummy.o
+	$(CXX) -o $@ $^ $(LDFLAGS)
+
+$(OBJDIR)/mrsrc.o: mrc-mini mrsrc.h
+	./mrc-mini -o $@ $^
+
+mrc: $(OBJECTS) $(OBJDIR)/mrsrc.o
 	$(CXX) -o $@ $^ $(LDFLAGS) 
 
 all: mrc
