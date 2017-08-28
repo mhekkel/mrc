@@ -20,7 +20,7 @@ DEFINES				+= PDB_REDO_DIR='"$(PDB_REDO_DIR)"'
 CFLAGS				+= -std=c++14
 CFLAGS				+= $(addprefix -I, $(INCLUDE_DIR))
 
-BOOST_LIBS			= system thread filesystem regex math_c99 math_c99f program_options date_time iostreams timer random chrono
+BOOST_LIBS			= system filesystem program_options
 BOOST_LIBS			:= $(BOOST_LIBS:%=boost_%$(BOOST_LIB_SUFFIX))
 LIBS				+= z $(BOOST_LIBS)
 

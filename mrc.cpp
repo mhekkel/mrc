@@ -662,6 +662,8 @@ MObjectFileImp* MObjectFileImp::Create(MTargetCPU inTarget)
 			result = new MELFObjectFileImp<eCPU_x86_64>();
 #elif defined(__i686) or defined(__i386)
 			result = new MELFObjectFileImp<eCPU_386>();
+#elif defined(__arm__)
+			result = new MELFObjectFileImp<eCPU_Arm>();
 #else
 			throw runtime_error("cannot determine native CPU format");
 #endif
