@@ -22,7 +22,7 @@ Then include this file and use it:
 
 	#include "mrsrc.h"
 	
-	void foo()
+	int main()
 	{
 		mrsrc::rsrc hello("texts/greeting");
 		if (hello)
@@ -30,6 +30,8 @@ Then include this file and use it:
 			string s(hello.data(), hello.size());
 			cout << s << endl;
 		}
+		
+		return 0;
 	}
   
 To create a resource file:
