@@ -820,7 +820,7 @@ void MResourceFile::Add(const fs::path& inPath, const fs::path& inFile)
 	else
 	{
 		if (VERBOSE)
-			cerr  << "adding " << inPath / inFile << endl;
+			cerr  << "adding " << inPath / inFile.filename() << endl;
 				
 		fs::ifstream f(inFile);
 	
@@ -837,7 +837,7 @@ void MResourceFile::Add(const fs::path& inPath, const fs::path& inFile)
 		b->sgetn(&text[0], size);
 		f.close();
 		
-		AddEntry(inPath / inFile, &text[0], size);
+		AddEntry(inPath / inFile.filename(), &text[0], size);
 	}
 }
 
@@ -928,15 +928,7 @@ int main(int argc, char* argv[])
 	
 		MResourceFile rsrcFile(target, eabi);		
 		for (fs::path i: vm["input"].as<vector<string>>())
-		{
-			if (is_directory(i))
-			{
-				for (auto j = fs::directory_iterator(i); j != fs::directory_iterator(); ++j)
-					rsrcFile.Add(ns, *j);
-			}
-			else
-				rsrcFile.Add(ns, i);
-		}
+			rsrcFile.Add(ns, i);
 		
 		rsrcFile.Write(vm["output"].as<string>());
 	}
