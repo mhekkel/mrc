@@ -820,7 +820,7 @@ void MResourceFile::Add(const fs::path& inPath, const fs::path& inFile)
 	else
 	{
 		if (VERBOSE)
-			cerr  << "adding " << inPath / inFile.filename() << endl;
+			cerr  << "adding " << inFile << " as " << inPath / inFile.filename() << endl;
 				
 		fs::ifstream f(inFile);
 	
@@ -926,7 +926,7 @@ int main(int argc, char* argv[])
 		if (vm.count("eabi"))
 			eabi = vm["eabi"].as<int>();
 	
-		MResourceFile rsrcFile(target, eabi);		
+		MResourceFile rsrcFile(target, eabi);
 		for (fs::path i: vm["input"].as<vector<string>>())
 			rsrcFile.Add(ns, i);
 		
