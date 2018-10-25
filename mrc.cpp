@@ -737,6 +737,9 @@ void MResourceFile::AddEntry(fs::path inPath, const char* inData, uint32 inSize)
 	
 	for (fs::path::iterator p = inPath.begin(); p != inPath.end(); ++p)
 	{
+		if (*p == ".")	// flatten
+			continue;
+		
 		// no such child? Add it and continue
 		if (mIndex[node].m_child == 0)
 		{
