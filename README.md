@@ -8,7 +8,7 @@ A long, long time ago there existed an operating system that did things differen
 
 One of the technical features of this OS to make this possible was what they called resources. In fact, resources were stored as some kind of database in one of the two forks of a file, the other fork being the data fork.
 
-Resources were mildly popular, other OS'es copied the concept in one way or another. The company that invented them abandonned it though, they thought they had something better....
+Resources were mildly popular, other OS'es copied the concept in one way or another. The company that invented them abandoned it though, they thought they had something better....
 
 Anyway, I still like being able to provide a single executable to the users of my software. And given the usefulness of resources I decided to create a compiler for them that works with the ELF executable format. Since using resource forks is not an option I decided to store the data in the static data section of an executable. The data is then available through global variables.
 
