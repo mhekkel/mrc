@@ -13,15 +13,12 @@
 //	This will create an object file called myrsrs.o containing the data for all file found in the rsrc/ directory.
 
 #include <iostream>
+#include <filesystem>
+#include <fstream>
 
 #include <elf.h>
 
 #include <boost/program_options.hpp>
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/fstream.hpp>
-
-#include <boost/version.hpp>
-#include <boost/cstdint.hpp>
 
 #include "mrsrc.h"
 
@@ -40,7 +37,7 @@ typedef uint64_t	uint64;
 
 using namespace std;
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 int VERBOSE = 0;
 
@@ -458,7 +455,7 @@ template
 >
 void MELFObjectFileImp<CPU, FLAGS, traits>::Write(const fs::path& inFile)
 {
-	fs::ofstream f(inFile, ios::binary | ios::trunc);
+	std::ofstream f(inFile, ios::binary | ios::trunc);
 	if (not f.is_open())
 		throw runtime_error("Failed to open object file " + inFile.string() + " for writing");
 
@@ -825,7 +822,7 @@ void MResourceFile::Add(const fs::path& inPath, const fs::path& inFile)
 		if (VERBOSE)
 			cerr  << "adding " << inFile << " as " << inPath / inFile.filename() << endl;
 				
-		fs::ifstream f(inFile);
+		std::ifstream f(inFile);
 	
 		if (not f.is_open())
 			throw runtime_error("Could not open data file");

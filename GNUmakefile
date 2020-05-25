@@ -17,10 +17,10 @@ DEFINES				+= VERSION='"$(VERSION)"'
 DEFINES				+= PDB_DIR='"$(PDB_DIR)"'
 DEFINES				+= PDB_REDO_DIR='"$(PDB_REDO_DIR)"'
 
-CFLAGS				+= -std=c++14
+CFLAGS				+= -std=c++17
 CFLAGS				+= $(addprefix -I, $(INCLUDE_DIR))
 
-BOOST_LIBS			= system filesystem program_options
+BOOST_LIBS			= program_options
 BOOST_LIBS			:= $(BOOST_LIBS:%=boost_%$(BOOST_LIB_SUFFIX))
 LIBS				+= z $(BOOST_LIBS)
 
@@ -33,7 +33,10 @@ ifneq ($(PACKAGES),)
 CFLAGS				+= $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config --cflags $(PACKAGES))
 LDFLAGS				+= $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config --libs $(PACKAGES))
 endif
-LDFLAGS				+= $(LIBRARY_DIR:%=-L %) $(LIBS:%=-l%) -g
+LDFLAGS				+= $(LIBRARY_DIR:%=-L %) $(LIBS:%=-l%) -lstdc++fs -g
+
+CFLAGS				+= $(BOOST:%=-I%/)
+LDFLAGS				+= $(BOOST:%=-L%/stage/lib)
 
 OBJDIR				= obj
 
