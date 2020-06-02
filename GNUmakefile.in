@@ -1,0 +1,74 @@
+# GNU makefile for mrc, the resource compiler
+
+.PHONY: firstTarget
+firstTarget: all
+
+CXX					= @CXX@
+LD					= @CXX@
+CXXFLAGS			= @CXXFLAGS@
+
+prefix				= @prefix@
+exec_prefix			= @exec_prefix@
+bindir				= @bindir@
+
+CXXFLAGS			+= @BOOST_CPPFLAGS@
+LDFLAGS				+= @BOOST_LDFLAGS@
+
+WARNINGS	= all no-multichar no-unknown-pragmas no-deprecated-declarations
+
+BOOST_LIBS			= program_options
+BOOST_LIBS			:= $(BOOST_LIBS:%=boost_%)
+LIBS				+= $(BOOST_LIBS) stdc++fs
+
+# generic defines
+
+CXXFLAGS			+= -std=c++17
+
+CFLAGS				+= $(addprefix -W, $(WARNINGS))
+CFLAGS				+= $(addprefix -D, $(DEFINES))
+
+OBJDIR				= obj
+
+ifneq ($(DEBUG),1)
+CFLAGS				+= -O3 -DNDEBUG -g
+else
+CFLAGS				+= -g -DDEBUG 
+OBJDIR				:= $(OBJDIR).dbg
+endif
+
+LDFLAGS				+= $(LIBS:%=-l%) -g
+
+SOURCES				= mrc.cpp
+
+OBJECTS	= $(addprefix $(OBJDIR)/, $(notdir $(SOURCES:%.cpp=%.o)))
+
+$(OBJDIR)/%.o: %.cpp | $(OBJDIR)
+	@ echo ">>" $<
+	@ $(CXX) -MD -c -o $@ $< $(CFLAGS) $(CXXFLAGS)
+
+-include $(OBJECTS:%.o=%.d)
+
+$(OBJECTS:.o=.d):
+
+$(OBJDIR):
+	@ test -d $@ || mkdir -p $@
+
+.PHONY: clean all
+clean:
+	rm -rf $(OBJDIR)/* mrc
+
+mrc-mini: $(OBJECTS) $(OBJDIR)/dummy.o
+	$(CXX) -o $@ $^ $(LDFLAGS)
+
+$(OBJDIR)/mrsrc.o: mrc-mini mrsrc.h
+	./mrc-mini -o $@ $^
+
+mrc: $(OBJECTS) $(OBJDIR)/mrsrc.o
+	$(CXX) -o $@ $^ $(LDFLAGS) 
+
+.PHONY: install
+install:
+	install mrc $(bindir)
+
+all: mrc
+
