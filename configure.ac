@@ -6,8 +6,9 @@ AX_CXX_COMPILE_STDCXX_17([noext])
 
 AX_BOOST_BASE([1.67])
 
-AC_CHECK_HEADERS(elf.h filesystem)
-AC_SEARCH_LIBS(stdc++fs boost_program_options)
+AC_CHECK_HEADER(elf.h, [], [AC_MSG_ERROR([Could not find the header file elf.h])])
+AC_CHECK_HEADER(filesystem, [], [AC_MSG_ERROR([Could not find the header file filesystem])])
+AX_BOOST_PROGRAM_OPTIONS
 
 AC_PROG_INSTALL
 
