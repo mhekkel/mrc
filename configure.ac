@@ -1,4 +1,4 @@
-AC_INIT(mrc, 1.0, [maarten@hekkelman.com])
+AC_INIT(mrc, 1.1, [maarten@hekkelman.com])
 
 dnl Switch to a C++ compiler, and check if it works.
 AC_LANG(C++)

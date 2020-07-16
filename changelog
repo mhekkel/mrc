@@ -1,0 +1,7 @@
+Version 1.1.0
+
+- New interface file, now no longer throws exception when a
+  resource is not found. So you should check the validity
+  using e.g. operator bool.
+
+Version 1.0.0
