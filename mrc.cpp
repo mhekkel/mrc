@@ -12,6 +12,8 @@
 //
 //	This will create an object file called myrsrs.o containing the data for all file found in the rsrc/ directory.
 
+#include "mrc.h"
+
 #include <iostream>
 #include <filesystem>
 #include <fstream>
@@ -30,10 +32,6 @@ typedef int32_t		int32;
 typedef uint32_t	uint32;
 typedef int64_t		int64;
 typedef uint64_t	uint64;
-
-#if not defined(VERSION)
-#define VERSION "0.1"
-#endif
 
 using namespace std;
 namespace po = boost::program_options;
@@ -856,7 +854,7 @@ int main(int argc, char* argv[])
 {
 	try
 	{
-		po::options_description visible_options("mrc " VERSION " options file1 [file2...]" );
+		po::options_description visible_options("mrc " PACKAGE_VERSION " options file1 [file2...]" );
 		visible_options.add_options()
 			("help,h",								"Display help message")
 			("version",								"Print version")
@@ -883,7 +881,7 @@ int main(int argc, char* argv[])
 		
 		if (vm.count("version"))
 		{
-			cout << argv[0] << " version " VERSION << endl;
+			cout << PACKAGE_NAME << " version " PACKAGE_VERSION << endl;
 			exit(0);
 		}
 	

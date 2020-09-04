@@ -1,0 +1,5 @@
+#pragma once
+
+#undef PACKAGE_VERSION
+
+#undef PACKAGE_NAME
