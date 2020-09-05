@@ -3,13 +3,14 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
-#ifndef MRSRC_H
-#define MRSRC_H
+#pragma once
 
 #include <string>
 #include <list>
 #include <exception>
 #include <istream>
+#include <cassert>
+#include <filesystem>
 
 /*
 	Resources are data sources for the application.
@@ -77,16 +78,16 @@ namespace mrsrc
 
 		rsrc() : m_impl(gResourceIndex) {}
 
-		rsrc(const rsrc &other)
+		rsrc(const rsrc& other)
 			: m_impl(other.m_impl) {}
 
-		rsrc &operator=(const rsrc &other)
+		rsrc& operator=(const rsrc& other)
 		{
 			m_impl = other.m_impl;
 			return *this;
 		}
 
-		rsrc(const std::string &path);
+		rsrc(std::filesystem::path path);
 
 		std::string name() const { return gResourceName + m_impl->m_name; }
 
@@ -110,11 +111,19 @@ namespace mrsrc
 			iterator_t(const rsrc_imp* cur)
 				: m_cur(cur) {}
 
-			iterator_t(const iterator_t& i);
-			iterator_t& operator=(const iterator_t& i);
+			iterator_t(const iterator_t& i)
+				: m_cur(i.m_cur)
+			{
+			}
+	
+			iterator_t& operator=(const iterator_t& i)
+			{
+				m_cur = i.m_cur;
+				return *this;
+			}
 
 			reference operator*()		{ return m_cur; }
-			pointer operator->()		{ return &m_cur; }
+			pointer operator->()		{ return& m_cur; }
 
 			iterator_t& operator++()
 			{
@@ -161,24 +170,16 @@ namespace mrsrc
 		const rsrc_imp *m_impl;
 	};
 
-	inline rsrc::rsrc(const std::string &path)
+	inline rsrc::rsrc(std::filesystem::path p)
 	{
 		m_impl = gResourceIndex;
 
 		// using std::filesytem::path would have been natural here of course...
-		std::string p(path);
+		
 		while (m_impl != nullptr and not p.empty())
 		{
-			std::string::size_type s = p.find('/');
-			std::string name;
-
-			if (s != std::string::npos)
-			{
-				name = p.substr(0, s);
-				p.erase(0, s + 1);
-			}
-			else
-				std::swap(name, p);
+			auto name = p.filename();
+			p = p.parent_path();
 
 			const rsrc_imp* impl = nullptr;
 			for (rsrc child: *this)
@@ -196,28 +197,61 @@ namespace mrsrc
 
 	// --------------------------------------------------------------------
 	
-	class streambuf : public std::streambuf
+	template<typename CharT, typename Traits>
+	class basic_streambuf : public std::basic_streambuf<CharT, Traits>
 	{
 	  public:
 
+		typedef CharT								char_type;
+		typedef Traits								traits_type;
+		typedef typename traits_type::int_type		int_type;
+		typedef typename traits_type::pos_type		pos_type;
+		typedef typename traits_type::off_type		off_type;
+
 		/// \brief constructor taking a \a path to the resource in memory
-		streambuf(const std::string& path)
+		basic_streambuf(const std::string& path)
 			: m_rsrc(path)
-			, m_begin(m_rsrc.data()), m_end(m_rsrc.data() + m_rsrc.size()), m_current(m_rsrc.data())
 		{
+			init();
 		}
 
 		/// \brief constructor taking a \a rsrc 
-		streambuf(const rsrc& rsrc)
+		basic_streambuf(const rsrc& rsrc)
 			: m_rsrc(rsrc)
-			, m_begin(m_rsrc.data()), m_end(m_rsrc.data() + m_rsrc.size()), m_current(m_rsrc.data())
+		{
+			init();
+		}
+
+		basic_streambuf(const basic_streambuf&) = delete;
+
+		basic_streambuf(basic_streambuf&& rhs)
+			: basic_streambuf(rhs.m_rsrc)
 		{
 		}
 
-		streambuf(const streambuf&) = delete;
-		streambuf& operator=(const streambuf&) = delete;
+		basic_streambuf& operator=(const basic_streambuf&) = delete;
+
+		basic_streambuf& operator=(basic_streambuf&& rhs)
+		{
+			swap(rhs);
+			return *this;
+		}
+
+		void swap(basic_streambuf& rhs)
+		{
+			std::swap(m_begin, rhs.m_begin);
+			std::swap(m_end, rhs.m_end);
+			std::swap(m_current, rhs.m_current);
+		}
 
 	  private:
+
+		void init()
+		{
+			m_begin = reinterpret_cast<const char_type*>(m_rsrc.data());
+			m_end = reinterpret_cast<const char_type*>(m_rsrc.data() + m_rsrc.size());
+			m_current = m_begin;
+		}
 
 		int_type underflow()
 		{
@@ -249,7 +283,7 @@ namespace mrsrc
 			return m_end - m_current;
 		}
 
-		pos_type seekoff(std::streambuf::off_type off, std::ios_base::seekdir dir, std::ios_base::openmode which)
+		pos_type seekoff(off_type off, std::ios_base::seekdir dir, std::ios_base::openmode which)
 		{
 			switch (dir)
 			{
@@ -278,7 +312,7 @@ namespace mrsrc
 			return m_current - m_begin;
 		}
 
-		pos_type seekpos(std::streambuf::pos_type pos, std::ios_base::openmode which)
+		pos_type seekpos(pos_type pos, std::ios_base::openmode which)
 		{
 			m_current = m_begin + pos;
 
@@ -293,11 +327,77 @@ namespace mrsrc
 
 	  private:
 		rsrc m_rsrc;
-		const char* const m_begin;
-		const char* const m_end;
-		const char* m_current;
+		const char_type* m_begin;
+		const char_type* m_end;
+		const char_type* m_current;
 	};
 
-} // namespace mrsrc
+	using streambuf = basic_streambuf<char, std::char_traits<char>>;
 
-#endif
+	// --------------------------------------------------------------------
+	// class mrsrc::istream
+
+	template<typename CharT, typename Traits>
+	class basic_istream : public std::basic_istream<CharT, Traits>
+	{
+	  public:
+		typedef CharT	 						char_type;
+		typedef Traits	 						traits_type;
+		typedef typename traits_type::int_type	int_type;
+		typedef typename traits_type::pos_type	pos_type;
+		typedef typename traits_type::off_type	off_type;
+
+	  private:
+
+		using __streambuf_type = basic_streambuf<CharT, Traits>;
+		using __istream_type = std::basic_istream<CharT, Traits>;
+
+		__streambuf_type m_buffer;
+	
+	  public:
+
+		basic_istream(const std::string& path)
+			: m_buffer(path)
+		{
+			this->init(&m_buffer);
+		}
+		
+		basic_istream(rsrc& resource)
+			: m_buffer(resource)\
+		{
+			this->init(&m_buffer);
+		}
+		
+		basic_istream(const basic_istream&) = delete;
+
+		basic_istream(basic_istream&& rhs)
+			: __istream_type(std::move(rhs))
+			, m_buffer(std::move(rhs.m_buffer))
+		{
+			__istream_type::set_rdbuf(&m_buffer);
+		}
+
+		basic_istream& operator=(const basic_istream& ) = delete;
+
+		basic_istream& operator=(basic_istream&& rhs)
+		{
+			__istream_type::operator=(std::move(rhs));
+			m_buffer = std::move(rhs.m_buffer);
+			return *this;
+		}
+
+		void swap(basic_istream& rhs)
+		{
+			__istream_type::swap(rhs);
+			m_buffer.swap(rhs.m_buffer);
+		}
+
+		__streambuf_type* rdbuf() const
+		{
+			return const_cast<__streambuf_type*>(&m_buffer);
+		}
+	};
+
+	using istream = basic_istream<char, std::char_traits<char>>;
+
+} // namespace mrsrc

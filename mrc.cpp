@@ -24,16 +24,6 @@
 
 #include "mrsrc.h"
 
-typedef int8_t		int8;
-typedef uint8_t		uint8;
-typedef int16_t		int16;
-typedef uint16_t	uint16;
-typedef int32_t		int32;
-typedef uint32_t	uint32;
-typedef int64_t		int64;
-typedef uint64_t	uint64;
-
-using namespace std;
 namespace po = boost::program_options;
 namespace fs = std::filesystem;
 
@@ -56,9 +46,9 @@ enum MTargetCPU
 
 // --------------------------------------------------------------------
 
-uint32 AddNameToNameTable(string& ioNameTable, const string& inName)
+uint32_t AddNameToNameTable(std::string& ioNameTable, const std::string& inName)
 {
-	uint32 result = 0;
+	uint32_t result = 0;
 	
 	const char* p = ioNameTable.c_str();
 	const char* e = p + ioNameTable.length();
@@ -90,8 +80,8 @@ struct MObjectFileImp
 {
 	fs::path
 					mFile;
-	uint32			mTextSize;
-	uint32			mDataSize;
+	uint32_t			mTextSize;
+	uint32_t			mDataSize;
 					
 	virtual			~MObjectFileImp() {}
 	
@@ -105,8 +95,8 @@ struct MObjectFileImp
 
 	struct MGlobal
 	{
-		string	name;
-		string	data;
+		std::string	name;
+		std::string	data;
 	};
 
 	typedef std::vector<MGlobal>	MGlobals;
@@ -120,7 +110,7 @@ class MObjectFile
 					MObjectFile(MTargetCPU inTarget, int EABI);
 					~MObjectFile();
 
-	void			AddGlobal(const string& inName, const void* inData, uint32 inSize);
+	void			AddGlobal(const std::string& inName, const void* inData, uint32_t inSize);
 	void			Write(const fs::path& inFile);
 
   private:
@@ -137,7 +127,7 @@ MObjectFile::~MObjectFile()
 	delete mImpl;
 }
 
-void MObjectFile::AddGlobal(const string& inName, const void* inData, uint32 inSize)
+void MObjectFile::AddGlobal(const std::string& inName, const void* inData, uint32_t inSize)
 {
 	MObjectFileImp::MGlobal g;
 	g.name = inName;
@@ -149,7 +139,7 @@ void MObjectFile::AddGlobal(const string& inName, const void* inData, uint32 inS
 void MObjectFile::Write(const fs::path& inFile)
 {
 	if (mImpl == nullptr)
-		throw runtime_error("nullptr error " + inFile.string());
+		throw std::runtime_error("nullptr error " + inFile.string());
 	mImpl->Write(inFile);
 }
 
@@ -183,23 +173,23 @@ bool swapper::operator()(bool inValue) const
 
 template<>
 inline
-int8 swapper::operator()(int8 inValue) const
+int8_t swapper::operator()(int8_t inValue) const
 {
 	return inValue;
 }
 
 template<>
 inline
-uint8 swapper::operator()(uint8 inValue) const
+uint8_t swapper::operator()(uint8_t inValue) const
 {
 	return inValue;
 }
 
 template<>
 inline
-int16 swapper::operator()(int16 inValue) const
+int16_t swapper::operator()(int16_t inValue) const
 {
-	return static_cast<int16>(
+	return static_cast<int16_t>(
 		((inValue & 0xFF00UL) >>  8) |
 		((inValue & 0x00FFUL) <<  8)
 	);
@@ -207,9 +197,9 @@ int16 swapper::operator()(int16 inValue) const
 
 template<>
 inline
-uint16 swapper::operator()(uint16 inValue) const
+uint16_t swapper::operator()(uint16_t inValue) const
 {
-	return static_cast<uint16>(
+	return static_cast<uint16_t>(
 		((inValue & 0xFF00UL) >>  8) |
 		((inValue & 0x00FFUL) <<  8)
 	);
@@ -217,9 +207,9 @@ uint16 swapper::operator()(uint16 inValue) const
 
 template<>
 inline
-int32 swapper::operator()(int32 inValue) const
+int32_t swapper::operator()(int32_t inValue) const
 {
-	return static_cast<int32>(
+	return static_cast<int32_t>(
 		((inValue & 0xFF000000UL) >> 24) |
 		((inValue & 0x00FF0000UL) >>  8) |
 		((inValue & 0x0000FF00UL) <<  8) |
@@ -229,9 +219,9 @@ int32 swapper::operator()(int32 inValue) const
 
 template<>
 inline
-uint32 swapper::operator()(uint32 inValue) const
+uint32_t swapper::operator()(uint32_t inValue) const
 {
-	return static_cast<uint32>(
+	return static_cast<uint32_t>(
 		((inValue & 0xFF000000UL) >> 24) |
 		((inValue & 0x00FF0000UL) >>  8) |
 		((inValue & 0x0000FF00UL) <<  8) |
@@ -253,32 +243,32 @@ uint32 swapper::operator()(uint32 inValue) const
 //
 template<>
 inline
-int64 swapper::operator()(int64 inValue) const
+int64_t swapper::operator()(int64_t inValue) const
 {
-	return static_cast<int64>(
-		(((static_cast<uint64>(inValue))<<56) & 0xFF00000000000000ULL)  |
-		(((static_cast<uint64>(inValue))<<40) & 0x00FF000000000000ULL)  |
-		(((static_cast<uint64>(inValue))<<24) & 0x0000FF0000000000ULL)  |
-		(((static_cast<uint64>(inValue))<< 8) & 0x000000FF00000000ULL)  |
-		(((static_cast<uint64>(inValue))>> 8) & 0x00000000FF000000ULL)  |
-		(((static_cast<uint64>(inValue))>>24) & 0x0000000000FF0000ULL)  |
-		(((static_cast<uint64>(inValue))>>40) & 0x000000000000FF00ULL)  |
-		(((static_cast<uint64>(inValue))>>56) & 0x00000000000000FFULL));
+	return static_cast<int64_t>(
+		(((static_cast<uint64_t>(inValue))<<56) & 0xFF00000000000000ULL)  |
+		(((static_cast<uint64_t>(inValue))<<40) & 0x00FF000000000000ULL)  |
+		(((static_cast<uint64_t>(inValue))<<24) & 0x0000FF0000000000ULL)  |
+		(((static_cast<uint64_t>(inValue))<< 8) & 0x000000FF00000000ULL)  |
+		(((static_cast<uint64_t>(inValue))>> 8) & 0x00000000FF000000ULL)  |
+		(((static_cast<uint64_t>(inValue))>>24) & 0x0000000000FF0000ULL)  |
+		(((static_cast<uint64_t>(inValue))>>40) & 0x000000000000FF00ULL)  |
+		(((static_cast<uint64_t>(inValue))>>56) & 0x00000000000000FFULL));
 }
 
 template<>
 inline
-uint64 swapper::operator()(uint64 inValue) const
+uint64_t swapper::operator()(uint64_t inValue) const
 {
-	return static_cast<uint64>(
-		((((uint64)inValue)<<56) & 0xFF00000000000000ULL)  |
-		((((uint64)inValue)<<40) & 0x00FF000000000000ULL)  |
-		((((uint64)inValue)<<24) & 0x0000FF0000000000ULL)  |
-		((((uint64)inValue)<< 8) & 0x000000FF00000000ULL)  |
-		((((uint64)inValue)>> 8) & 0x00000000FF000000ULL)  |
-		((((uint64)inValue)>>24) & 0x0000000000FF0000ULL)  |
-		((((uint64)inValue)>>40) & 0x000000000000FF00ULL)  |
-		((((uint64)inValue)>>56) & 0x00000000000000FFULL));
+	return static_cast<uint64_t>(
+		((((uint64_t)inValue)<<56) & 0xFF00000000000000ULL)  |
+		((((uint64_t)inValue)<<40) & 0x00FF000000000000ULL)  |
+		((((uint64_t)inValue)<<24) & 0x0000FF0000000000ULL)  |
+		((((uint64_t)inValue)<< 8) & 0x000000FF00000000ULL)  |
+		((((uint64_t)inValue)>> 8) & 0x00000000FF000000ULL)  |
+		((((uint64_t)inValue)>>24) & 0x0000000000FF0000ULL)  |
+		((((uint64_t)inValue)>>40) & 0x000000000000FF00ULL)  |
+		((((uint64_t)inValue)>>56) & 0x00000000000000FFULL));
 }
 
 #if defined(LITTLE_ENDIAN)
@@ -409,7 +399,7 @@ MObjectFileImp* CreateELFObjectFileImp(
 
 using namespace std;
 
-uint32 WriteDataAligned(ofstream& inStream, const void* inData, uint32 inSize, uint32 inAlignment = 1)
+uint32_t WriteDataAligned(ofstream& inStream, const void* inData, uint32_t inSize, uint32_t inAlignment = 1)
 {
 	inStream.write(reinterpret_cast<const char*>(inData), inSize);
 
@@ -476,9 +466,9 @@ void MELFObjectFileImp<CPU, FLAGS, traits>::Write(const fs::path& inFile)
 		kShStrtabSection	// e_shstrndx
 	};
 
-	uint32 data_offset = WriteDataAligned(f, &eh, sizeof(eh), 16);
+	uint32_t data_offset = WriteDataAligned(f, &eh, sizeof(eh), 16);
 
-	string strtab;
+	std::string strtab;
 	AddNameToNameTable(strtab, "");		// null name
 	
 	Elf_Sym sym = {};
@@ -502,7 +492,7 @@ void MELFObjectFileImp<CPU, FLAGS, traits>::Write(const fs::path& inFile)
 	sym.st_shndx = kBssSection;
 	syms.push_back(sym);
 
-	uint32 sym_offset = data_offset;
+	uint32_t sym_offset = data_offset;
 
 	for (MGlobals::iterator g = mGlobals.begin(); g != mGlobals.end(); ++g)
 	{
@@ -517,16 +507,16 @@ void MELFObjectFileImp<CPU, FLAGS, traits>::Write(const fs::path& inFile)
 		sym_offset = WriteDataAligned(f, g->data.c_str(), g->data.length(), 8);
 	}
 	
-	uint32 data_size = sym_offset;
+	uint32_t data_size = sym_offset;
 
-	uint32 symtab_off = sym_offset;
+	uint32_t symtab_off = sym_offset;
 	assert((sizeof(Elf_Sym) % 8) == 0);
 	
-	uint32 symtab_size = syms.size() * sizeof(sym);
-	uint32 strtab_off = WriteDataAligned(f, &syms[0], symtab_size, 8);
-	uint32 shstrtab_off = WriteDataAligned(f, strtab.c_str(), strtab.length(), 8);
+	uint32_t symtab_size = syms.size() * sizeof(sym);
+	uint32_t strtab_off = WriteDataAligned(f, &syms[0], symtab_size, 8);
+	uint32_t shstrtab_off = WriteDataAligned(f, strtab.c_str(), strtab.length(), 8);
 
-	string shstrtab;
+	std::string shstrtab;
 	(void)AddNameToNameTable(shstrtab, "");		// null name
 	(void)AddNameToNameTable(shstrtab, ".text");
 	(void)AddNameToNameTable(shstrtab, ".rsrc_data");
@@ -718,7 +708,7 @@ class MResourceFile
 
   private:
 
-	void AddEntry(fs::path inPath, const char* inData, uint32 inSize);
+	void AddEntry(fs::path inPath, const char* inData, uint32_t inSize);
 
 	MTargetCPU				mTarget;
 	int						mEABI;
@@ -726,9 +716,9 @@ class MResourceFile
 	vector<char>			mData, mName;
 };
 
-void MResourceFile::AddEntry(fs::path inPath, const char* inData, uint32 inSize)
+void MResourceFile::AddEntry(fs::path inPath, const char* inData, uint32_t inSize)
 {
-	uint32 node = 0;	// start at root
+	uint32_t node = 0;	// start at root
 	
 	for (fs::path::iterator p = inPath.begin(); p != inPath.end(); ++p)
 	{
@@ -742,7 +732,7 @@ void MResourceFile::AddEntry(fs::path inPath, const char* inData, uint32 inSize)
 			
 			child.m_name = mName.size();
 			
-			string n = p->string();
+			std::string n = p->string();
 			copy(n.begin(), n.end(), back_inserter(mName));
 			mName.push_back(0);
 			
@@ -754,7 +744,7 @@ void MResourceFile::AddEntry(fs::path inPath, const char* inData, uint32 inSize)
 		}
 		
 		// lookup the path element in the current directory
-		uint32 next = mIndex[node].m_child;
+		uint32_t next = mIndex[node].m_child;
 		for (;;)
 		{
 			const char* name = &mName[0] + mIndex[next].m_name;
@@ -778,7 +768,7 @@ void MResourceFile::AddEntry(fs::path inPath, const char* inData, uint32 inSize)
 			
 			n.m_name = mName.size();
 			
-			string s = p->string();
+			std::string s = p->string();
 			copy(s.begin(), s.end(), back_inserter(mName));
 			mName.push_back(0);
 			
@@ -827,7 +817,7 @@ void MResourceFile::Add(const fs::path& inPath, const fs::path& inFile)
 	
 		filebuf* b = f.rdbuf();
 		
-		uint32 size = b->pubseekoff(0, ios::end, ios::in);
+		uint32_t size = b->pubseekoff(0, ios::end, ios::in);
 		b->pubseekoff(0, ios::beg, ios::in);
 		
 		vector<char> text(size);
@@ -858,16 +848,16 @@ int main(int argc, char* argv[])
 		visible_options.add_options()
 			("help,h",								"Display help message")
 			("version",								"Print version")
-			("output,o",	po::value<string>(),	"Output file, this file is in the default object file format for this OS.")
-			("cpu",			po::value<string>(),	"CPU type, default is native CPU, available values are: i386, x86_64, powerpc32, powerpc64 and arm")
+			("output,o",	po::value<std::string>(),	"Output file, this file is in the default object file format for this OS.")
+			("cpu",			po::value<std::string>(),	"CPU type, default is native CPU, available values are: i386, x86_64, powerpc32, powerpc64 and arm")
 			("header",								"This will print out the header file you need to include in your program to access your resources")
-			("root",		po::value<string>(),	"Root path for the stored data (in the final resource data structure")
+			("root",		po::value<std::string>(),	"Root path for the stored data (in the final resource data structure")
 			("arm-eabi",	po::value<int>(),		"EABI version for ARM")
 			("verbose,v",							"Verbose output");
 	
 		po::options_description hidden_options("hidden options");
 		hidden_options.add_options()
-			("input,i",		po::value<vector<string>>(),	"Input files");
+			("input,i",		po::value<vector<std::string>>(),	"Input files");
 	
 		po::options_description cmdline_options;
 		cmdline_options.add(visible_options).add(hidden_options);
@@ -889,7 +879,7 @@ int main(int argc, char* argv[])
 		{
 			mrsrc::rsrc data("mrsrc.h");
 			
-			string text(data.data(), data.size());
+			std::string text(data.data(), data.size());
 			
 			cout << text << endl;
 			exit(0);
@@ -904,14 +894,14 @@ int main(int argc, char* argv[])
 		if (vm.count("verbose"))
 			VERBOSE = 1;
 		
-		string ns;
+		std::string ns;
 		if (vm.count("root"))
-			ns = vm["root"].as<string>();
+			ns = vm["root"].as<std::string>();
 		
 		MTargetCPU target = eCPU_native;
 		if (vm.count("cpu"))
 		{
-			string cpu = vm["cpu"].as<string>();
+			std::string cpu = vm["cpu"].as<std::string>();
 			if (cpu == "i386")				target = eCPU_386;
 			else if (cpu == "x86_64")		target = eCPU_x86_64;
 			else if (cpu == "powerpc32")	target = eCPU_PowerPC_32;
@@ -925,10 +915,10 @@ int main(int argc, char* argv[])
 			eabi = vm["eabi"].as<int>();
 	
 		MResourceFile rsrcFile(target, eabi);
-		for (fs::path i: vm["input"].as<vector<string>>())
+		for (fs::path i: vm["input"].as<vector<std::string>>())
 			rsrcFile.Add(ns, i);
 		
-		rsrcFile.Write(vm["output"].as<string>());
+		rsrcFile.Write(vm["output"].as<std::string>());
 	}
 	catch (const exception& ex)
 	{
