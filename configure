@@ -5092,14 +5092,77 @@ else
 fi
 
 
+
 ac_fn_cxx_check_header_mongrel "$LINENO" "filesystem" "ac_cv_header_filesystem" "$ac_includes_default"
 if test "x$ac_cv_header_filesystem" = xyes; then :
 
 else
-  as_fn_error $? "Could not find the header file filesystem" "$LINENO" 5
+  as_fn_error $? "The file <filesystem> is missing, perhaps you should install a more recent libstdc++ implementation." "$LINENO" 5
 fi
 
 
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking Whether linking to the c++ filesystem library requires -lstdc++fs" >&5
+$as_echo_n "checking Whether linking to the c++ filesystem library requires -lstdc++fs... " >&6; }
+if ${ax_cv_need_stdcppfs+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+		cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <filesystem>
+int
+main ()
+{
+(void)std::filesystem::current_path();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+
+				ax_cv_need_stdcppfs="no";
+
+else
+
+				SAVE_LIBS="$LIBS"
+				LIBS="$LIBS -lstdc++fs"
+				cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <filesystem>
+int
+main ()
+{
+(void)std::filesystem::current_path();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+
+						ax_cv_need_stdcppfs="yes";
+
+else
+
+						as_fn_error $? "Could not link filesystem" "$LINENO" 5
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+				LIBS=$SAVE_LIBS
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_need_stdcppfs" >&5
+$as_echo "$ax_cv_need_stdcppfs" >&6; }
+if test "x$ax_cv_need_stdcppfs" = "xyes"; then
+	LIBS="$LIBS -lstdc++fs"
+fi
 
 # Find a good install program.  We prefer a C program (faster),
 # so one script is as good as another.  But avoid the broken or
