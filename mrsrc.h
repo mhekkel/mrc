@@ -176,10 +176,12 @@ namespace mrsrc
 
 		// using std::filesytem::path would have been natural here of course...
 		
-		while (m_impl != nullptr and not p.empty())
+		auto pb = p.begin();
+		auto pe = p.end();
+
+		while (m_impl != nullptr and pb != pe)
 		{
-			auto name = p.filename();
-			p = p.parent_path();
+			auto name = *pb++;
 
 			const rsrc_imp* impl = nullptr;
 			for (rsrc child: *this)
@@ -193,6 +195,9 @@ namespace mrsrc
 
 			m_impl = impl;
 		}
+
+		if (pb != pe)	// not found
+			m_impl = nullptr;
 	}
 
 	// --------------------------------------------------------------------

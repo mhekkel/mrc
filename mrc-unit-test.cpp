@@ -65,11 +65,44 @@ BOOST_AUTO_TEST_CASE(test_10)
 {
 	mrsrc::rsrc r0("");
 
-	BOOST_TEST(std::distance(r0.begin(), r0.end()) == 2);
+	BOOST_TEST(std::distance(r0.begin(), r0.end()) == 3);
 
-	auto i = r0.begin();
-	BOOST_TEST(i->name() == "resource-1.txt");
-	++i;
-	BOOST_TEST(i->name() == "resource-2.txt");
+	std::set<std::string> found;
+	for (auto& r1: r0)
+		found.insert(r1.name());
+
+	std::set<std::string> kTest{"resource-1.txt", "resource-2.txt", "subdir"};
+
+	BOOST_TEST(found == kTest);
+
+	if (found != kTest)
+	{
+		for (auto& f: found)
+			std::cout << f << std::endl;
+	}
+}
+
+BOOST_AUTO_TEST_CASE(test_11)
+{
+	mrsrc::rsrc r0("subdir/resource-3.txt");
+
+	BOOST_TEST((bool)r0);
+
+	mrsrc::istream is(r0);
+	std::string line;
+	BOOST_TEST((bool)std::getline(is, line));
+	BOOST_TEST(line == "Dit is resource 3");
+}
+
+BOOST_AUTO_TEST_CASE(test_12)
+{
+	mrsrc::rsrc r0("subdir/subsubdir/resource-4.txt");
+
+	BOOST_TEST((bool)r0);
+
+	mrsrc::istream is(r0);
+	std::string line;
+	BOOST_TEST((bool)std::getline(is, line));
+	BOOST_TEST(line == "Dit is resource 4");
 }
 

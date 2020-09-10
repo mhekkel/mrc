@@ -1,3 +1,13 @@
+Version 1.2.2
+- Fixed error caused by switching to std::filesystem usage.
+
+Version 1.2.0
+- Added istream class
+
+Version 1.2.0
+- Added streambuf class
+- Added unit tests
+
 Version 1.1.0
 
 - New interface file, now no longer throws exception when a
