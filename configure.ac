@@ -6,6 +6,7 @@ AX_CXX_COMPILE_STDCXX_17([noext])
 
 AC_CONFIG_SRCDIR([mrc.cpp])
 AC_CONFIG_HEADERS([mrc.h])
+AC_CONFIG_AUX_DIR(config)
 
 AC_ARG_VAR([DEBUG], [Build a debug version of the application])
 
