@@ -11,6 +11,7 @@ prefix				= @prefix@
 exec_prefix			= @exec_prefix@
 libdir				= @libdir@
 includedir			= @includedir@
+bindir				= @bindir@
 
 GNUmakefile: config.status GNUmakefile.in
 	$(SHELL) ./config.status
@@ -66,11 +67,11 @@ $(OBJDIR):
 clean:
 	rm -rf $(OBJDIR)/* mrc mrc-unit-test
 
-mrc-mini: $(OBJDIR)/mrc.o $(OBJDIR)/dummy.o
+mrc-bootstrap: $(OBJDIR)/mrc.o $(OBJDIR)/dummy.o
 	$(CXX) -o $@ $^ $(LDFLAGS) $(LIBS)
 
-$(OBJDIR)/mrc_rsrc.o: mrc-mini mrsrc.h
-	./mrc-mini -o $@ $^
+$(OBJDIR)/mrc_rsrc.o: mrc-bootstrap mrsrc.h
+	./mrc-bootstrap -o $@ $^
 
 mrc: $(OBJDIR)/mrc.o $(OBJDIR)/mrc_rsrc.o
 	$(CXX) -o $@ $^ $(LDFLAGS) $(LIBS)

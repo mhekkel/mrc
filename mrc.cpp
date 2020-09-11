@@ -887,8 +887,9 @@ int main(int argc, char* argv[])
 		
 		if (vm.count("help") or vm.count("input") == 0)
 		{
-			cerr << visible_options << endl;
-			exit(1);
+			cerr << visible_options << endl
+				 << "See man mrc for more help" << endl;
+			exit(vm.count("help") == 0);
 		}
 		
 		if (vm.count("verbose"))

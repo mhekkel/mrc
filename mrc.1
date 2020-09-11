@@ -1,0 +1,116 @@
+.TH mrc 1 "2020-09-11" "version 1.2.2" "User Commands"
+.if n .ad l
+.nh
+.SH NAME
+mrc \- A resource compiler
+.SH SYNOPSIS
+mrc [\fB-o\fR|\fB--output\fR outputfile]
+    [\fB--cpu\fR arg]
+    [\fB--arm-eabi\fR arg]
+    [\fB--root\fR arg]
+    file1 [file2...]
+.sp
+mrc [\fB-h\fR|\fB--help\fR]
+.sp
+mrc [\fB-v\fR|\fB--version\fR]
+.sp
+mrc [\fB--header\fR] > mrsrc.h
+.sp
+ #include "mrsrc.h"
+ void foo()
+ {
+   mrsrc::rsrc data("/alerts/text.txt");
+   if (data) {
+     mrsrc::istream is(data);
+     ...
+   }
+ }
+.SH DESCRIPTION
+Many applications come with supplementary data. This data is
+usually stored on disk as regular files. The disadvantage of
+this procedure is that an application cannot simply be copied
+to another location or computer and expected to function properly.
+.sp
+Resources are a way to overcome this problem by including all
+data inside the executable file. The mrc resource compiler can
+create object files containing both the data and an index. This
+data can then be accessed from within an application using
+.BR C++
+classes.
+.SH OPTIONS
+.TP
+[\fB-o\fR|\fB--output\fR] file
+Specify the output file, the resulting file will be an object file
+you can link together with the rest of your object files into an
+executable file.
+.TP
+\fB--cpu\fR arg
+By default mrc assumes you want to create a resource file for the
+machine it runs on. But using this flag you can create files for
+other architectures, useful when cross compiling.
+.sp
+Accepted values for the argument are \fi386\fR, \fBx86_64\fR,
+\fBpowerpc32\fR, \fBpowerpc64\fR, \fBarm\fR
+.TP
+\fB--arm-eabi\fR number
+When the cpu is \fBarm\fR the EABI for this processor can be 
+specified using this option. Accepted values are \fB1\fR through \fB5\R.
+.TP
+\fB--root\fR
+The resources are accessed using a path. You can specify the root part
+of the path using this parameter.
+.TP
+\fB--header\fR
+This option will print a \fBmrsrc.h\fR file to \fBstdout\fR which
+you can write to disk and use to access resources.
+.TP
+[\fB-v\fR|\fB--version\fR]
+Print version number and exit.
+.TP
+[\fB-h\fR|\fB--help\fR]
+Print simple help summary and exit.
+.SH DETAILS
+.sp
+The way this works is that mrc first collects all data from the
+files specified, including the files found in specified directories.
+An simple index is created to allow hierarchical access to the data.
+The data is then flattened into three data structures and these
+are written to the \fB.data\fR section of the object file. The
+three data blobs are then made available as globals in your
+application with the names \fBgResourceIndex\fR,
+\fBgResourceName\fR and \fBgResourceData\fR.
+.sp
+The index entries have the following format:
+    struct rsrc_imp
+    {
+        unsigned int m_next;   // index of the next sibling entry
+        unsigned int m_child;  // index of the first child entry
+        unsigned int m_name;   // offset of the name for this entry
+        unsigned int m_size;   // data size for this entry
+        unsigned int m_data;   // offset of the data for this entry
+    };
+.sp
+The classes in the \fBmrsrc.h\fR file are contained in the
+namespace \fBmrsrc\fR. The available classes are
+.TP
+\fBmrsrc::rsrc\fR
+This is the basic class to access data. It has a constructor that
+takes a path to a resource. Data can be accessed using the \fBdata\fR
+method and the size of the data is available via the \fBsize\fR method.
+If the resource was not found, \fBdata\fR will return \fBnullptr\fR and
+\fBsize\fR will return zero. You can also use \fBoperator bool\fR to
+check for valid data.
+.TP
+\fBmrsrc::streambuf\fR
+This class is derived from \fBstd::streambuf\fR. It can take both a
+\fBmrsrc::rsrc\fR or a path as constructor parameter.
+.sp
+.TP
+\fBmrsrc::istream\fR
+This class is derived from \fBstd::istream\fR. It can take both a
+\fBmrsrc::rsrc\fR or a path as constructor parameter.
+.SH BUGS
+This application can only generate ELF formatted object files.
+.sp
+Only a single resource entry can be generated and there's no
+way to merge or manipulate resource files yet.
