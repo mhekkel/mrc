@@ -80,8 +80,8 @@ struct MObjectFileImp
 {
 	fs::path
 					mFile;
-	uint32_t			mTextSize;
-	uint32_t			mDataSize;
+	uint32_t		mTextSize;
+	uint32_t		mDataSize;
 					
 	virtual			~MObjectFileImp() {}
 	
