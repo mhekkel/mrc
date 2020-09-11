@@ -64,11 +64,56 @@ of the path using this parameter.
 This option will print a \fBmrsrc.h\fR file to \fBstdout\fR which
 you can write to disk and use to access resources.
 .TP
-[\fB-v\fR|\fB--version\fR]
+[\fB-v\fR|\fB--verbose\fR]
+Print debug output, useful to track where all data ends up in the
+resource.
+.TP
+\fB--version\fR
 Print version number and exit.
 .TP
 [\fB-h\fR|\fB--help\fR]
 Print simple help summary and exit.
+.TP
+file [file...]
+One or more files to include in the resource file. Directory names
+can be used as well. All regular files end up in the root of the
+resource tree, files found in directories end up in directies in
+the resource tree. The following rules apply:
+.sp
+Regular files are added in the root of the resource tree using
+their proper file name.
+.sp
+If the file name refers to a directory, the directory is traversed
+recursively and all files are added. If the file name ends with a
+forward slash (/) files are added to the root. If the file does
+not end with a slash, the name of the directory will be placed
+in the root and all contained files will be placed beneath this.
+.sp
+.SH EXAMPLES
+.PP
+Here's a list of usage cases.
+.TP
+mrc -o x.o my-resource.txt my-image.png
+Will create a resource file containing two resources accessible
+using the path "/my-resource.txt" and "/my-image.png" respectively.
+.TP
+mrc -o x.o img/my-image.png
+Will create a resource file containing a single resource accessible
+using the path "/my-image.png".
+.TP
+mrc -o x.o img/
+Assuming there are two images in the directory img called
+my-image-1.png and my-image-2.png, the resource file will contain
+them both accessible under the name "/my-image-1.png" and
+"/my-image-1.png".
+.sp
+mrc -o x.o img
+Same as the previous, but note there's no trailing slash,
+the resource file will contain both images but they are now
+accessible under the name "/img/my-image-1.png" and
+"/img/my-image-1.png".
+.PP
+Use the verbose flag (\fB--verbose\fR) to track what ends up where.
 .SH DETAILS
 .sp
 The way this works is that mrc first collects all data from the
