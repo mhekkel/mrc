@@ -2,6 +2,9 @@
 
 firstTarget: all
 
+PACKAGE_NAME		= @PACKAGE_NAME@
+PACKAGE_VERSION		= @PACKAGE_VERSION@
+
 CXX					= @CXX@
 CXXFLAGS			= @CXXFLAGS@ @CPPFLAGS@ @BOOST_CPPFLAGS@
 LDFLAGS				= @LDFLAGS@ @BOOST_LDFLAGS@
@@ -68,12 +71,12 @@ $(OBJDIR):
 
 .PHONY: clean all
 clean:
-	rm -rf $(OBJDIR)/* mrc mrc-unit-test
+	rm -rf $(OBJDIR)/* mrc mrc-bootstrap mrc-unit-test
 
 mrc-bootstrap: $(OBJDIR)/mrc.o $(OBJDIR)/dummy.o
 	$(CXX) -o $@ $^ $(LDFLAGS) $(LIBS)
 
-$(OBJDIR)/mrc_rsrc.o: mrc-bootstrap mrsrc.h
+$(OBJDIR)/mrc_rsrc.o: mrsrc.h | mrc-bootstrap
 	./mrc-bootstrap -o $@ $^
 
 mrc: $(OBJDIR)/mrc.o $(OBJDIR)/mrc_rsrc.o
@@ -88,6 +91,10 @@ mrc-unit-test: $(OBJDIR)/mrc-unit-test.o $(OBJDIR)/mrc-unit-test_rsrc.o
 .PHONY: test
 test: mrc mrc-unit-test
 	./mrc-unit-test
+
+.PHONY: dist
+dist:
+	git archive master | gzip > ../$(PACKAGE_NAME)-$(PACKAGE_VERSION).tar.gz
 
 .PHONY: install
 install:
