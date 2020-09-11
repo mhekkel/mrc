@@ -91,7 +91,7 @@ test: mrc mrc-unit-test
 
 .PHONY: install
 install:
-	install -D mrc $(bindir)
+	install -D mrc $(bindir)/mrc
 	install -D -m 644 mrc.1 $(mandir)/man1/mrc.1
 	gzip $(mandir)/man1/mrc.1
 
