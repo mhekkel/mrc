@@ -1,0 +1,5 @@
+mrc (1.2.2-1) unstable; urgency=medium
+
+  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- Maarten L. Hekkelman <maarten@hekkelman.com>  Fri, 11 Sep 2020 10:39:06 +0200
