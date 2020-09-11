@@ -7,7 +7,9 @@ CXXFLAGS			= @CXXFLAGS@ @CPPFLAGS@ @BOOST_CPPFLAGS@
 LDFLAGS				= @LDFLAGS@ @BOOST_LDFLAGS@
 LIBS				= @BOOST_PROGRAM_OPTIONS_LIB@ @LIBS@
 
-prefix				= $(DESTDIR)@prefix@
+prefix				= @prefix@
+datarootdir			= @datarootdir@
+datadir				= @datadir@
 exec_prefix			= @exec_prefix@
 libdir				= @libdir@
 includedir			= @includedir@
@@ -90,7 +92,7 @@ test: mrc mrc-unit-test
 .PHONY: install
 install:
 	install -D mrc $(bindir)
-	install -D -m 644 mrc.1 $(mandir)/man1
+	install -D -m 644 mrc.1 $(mandir)/man1/mrc.1
 	gzip $(mandir)/man1/mrc.1
 
 all: mrc
