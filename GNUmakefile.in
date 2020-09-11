@@ -7,11 +7,12 @@ CXXFLAGS			= @CXXFLAGS@ @CPPFLAGS@ @BOOST_CPPFLAGS@
 LDFLAGS				= @LDFLAGS@ @BOOST_LDFLAGS@
 LIBS				= @BOOST_PROGRAM_OPTIONS_LIB@ @LIBS@
 
-prefix				= @prefix@
+prefix				= $(DESTDIR)@prefix@
 exec_prefix			= @exec_prefix@
 libdir				= @libdir@
 includedir			= @includedir@
 bindir				= @bindir@
+mandir				= @mandir@
 
 GNUmakefile: config.status GNUmakefile.in
 	$(SHELL) ./config.status
@@ -88,7 +89,9 @@ test: mrc mrc-unit-test
 
 .PHONY: install
 install:
-	install mrc $(bindir)
+	install -D mrc $(bindir)
+	install -D -m 644 mrc.1 $(mandir)/man1
+	gzip $(mandir)/man1/mrc.1
 
 all: mrc
 

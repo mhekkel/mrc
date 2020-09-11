@@ -26,14 +26,15 @@ BOOST_AUTO_TEST_CASE(test_2)
 
 	BOOST_TEST(r2.data() != nullptr);
 	BOOST_TEST(r2.size() == 102);
+/*
+		const char16_t* t = u"\xfeffThis is the first line\
+And this is the second line";
+		// t[0] = 0xfeff;
 
-// 		const char16_t* t = u"\xfeffThis is the first line\
-// And this is the second line";
-// 		// t[0] = 0xfeff;
+		int r = std::memcmp(r2.data(), (char*)t, r2.size());
 
-// 		int r = std::memcmp(r2.data(), (char*)t, r2.size());
-
-// 		BOOST_TEST(r == 0);
+		BOOST_TEST(r == 0);
+*/
 }
 
 BOOST_AUTO_TEST_CASE(test_3)
