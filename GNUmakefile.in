@@ -80,7 +80,7 @@ $(OBJDIR)/mrc-unit-test_rsrc.o: $(wildcard rsrc/*)
 	./mrc -o $@ $^
 
 mrc-unit-test: $(OBJDIR)/mrc-unit-test.o $(OBJDIR)/mrc-unit-test_rsrc.o
-	$(CXX) -o $@ $^ $(LDFLAGS) 
+	$(CXX) -o $@ $^ $(LDFLAGS) $(LIBS)
 
 .PHONY: test
 test: mrc mrc-unit-test
