@@ -383,13 +383,15 @@ namespace mrsrc
 	  public:
 
 		basic_istream(const std::string& path)
-			: m_buffer(path)
+			: __istream_type(&m_buffer)
+			, m_buffer(path)
 		{
 			this->init(&m_buffer);
 		}
 		
 		basic_istream(rsrc& resource)
-			: m_buffer(resource)\
+			: __istream_type(&m_buffer)
+			, m_buffer(resource)\
 		{
 			this->init(&m_buffer);
 		}
