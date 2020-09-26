@@ -98,8 +98,10 @@ dist:
 
 .PHONY: install
 install:
-	install -D mrc $(bindir)/mrc
-	install -D -m 644 mrc.1 $(mandir)/man1/mrc.1
+	install -d $(bindir)
+	install mrc $(bindir)/mrc
+	install -d $(mandir)/man1
+	install -m 644 mrc.1 $(mandir)/man1/mrc.1
 	gzip $(mandir)/man1/mrc.1
 
 all: mrc
