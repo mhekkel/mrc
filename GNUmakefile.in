@@ -19,6 +19,8 @@ includedir			= @includedir@
 bindir				= @bindir@
 mandir				= @mandir@
 
+ifneq "$(CHECK_CONFIG)" ""
+
 GNUmakefile: config.status GNUmakefile.in
 	$(SHELL) ./config.status
 
@@ -27,6 +29,8 @@ config.status: configure
 
 configure: configure.ac
 	autoconf
+
+endif
 
 # main build variables
 CXXFLAGS            += -Wall -Wno-multichar
