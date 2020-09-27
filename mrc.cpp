@@ -414,8 +414,7 @@ struct MELFObjectFileImp : public MObjectFileImp
 	void Write(const fs::path& inFile);
 };
 
-MObjectFileImp* CreateELFObjectFileImp(
-	MTargetCPU		inTarget);
+MObjectFileImp* CreateELFObjectFileImp(MTargetCPU inTarget);
 
 #if not (defined(__APPLE__) and defined(__MACH__))
 

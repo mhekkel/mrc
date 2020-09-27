@@ -1,0 +1,20 @@
+language: cpp
+
+os:
+  - linux
+
+dist:
+  - focal
+
+compiler:
+  - gcc
+
+addons:
+  apt:
+    packages:
+      - libboost-all-dev
+
+script:
+  - ./configure
+  - make
+  - sudo make install
