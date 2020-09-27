@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/mhekkel/mrc.svg?branch=master)](https://travis-ci.org/mhekkel/mrc)
+
 # mrc
 Maartens Resource Compiler
 ==========================
