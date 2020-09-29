@@ -418,9 +418,7 @@ MObjectFileImp* CreateELFObjectFileImp(MTargetCPU inTarget);
 
 #if not (defined(__APPLE__) and defined(__MACH__))
 
-using namespace std;
-
-uint32_t WriteDataAligned(ofstream& inStream, const void* inData, uint32_t inSize, uint32_t inAlignment = 1)
+uint32_t WriteDataAligned(std::ofstream& inStream, const void* inData, uint32_t inSize, uint32_t inAlignment = 1)
 {
 	inStream.write(reinterpret_cast<const char*>(inData), inSize);
 
@@ -464,9 +462,9 @@ template
 >
 void MELFObjectFileImp<CPU, FLAGS, traits>::Write(const fs::path& inFile)
 {
-	std::ofstream f(inFile, ios::binary | ios::trunc);
+	std::ofstream f(inFile, std::ios::binary | std::ios::trunc);
 	if (not f.is_open())
-		throw runtime_error("Failed to open object file " + inFile.string() + " for writing");
+		throw std::runtime_error("Failed to open object file " + inFile.string() + " for writing");
 
 	Elf_Ehdr eh = {
 							// e_ident
@@ -493,7 +491,7 @@ void MELFObjectFileImp<CPU, FLAGS, traits>::Write(const fs::path& inFile)
 	AddNameToNameTable(strtab, "");		// null name
 	
 	Elf_Sym sym = {};
-	vector<Elf_Sym> syms;
+	std::vector<Elf_Sym> syms;
 	
 		// kNullSymbol
 	syms.push_back(sym);
@@ -681,7 +679,7 @@ MObjectFileImp* MObjectFileImp::Create(MTargetCPU inTarget, int EABI)
 		
 		case eCPU_Arm:
 			if (EABI < 1 or EABI > 5)
-				throw runtime_error("Need to specify valid EABI for ARM");
+				throw std::runtime_error("Need to specify valid EABI for ARM");
 				
 			switch (EABI)
 			{
@@ -704,7 +702,7 @@ MObjectFileImp* MObjectFileImp::Create(MTargetCPU inTarget, int EABI)
 			break;
 
 		default:
-			throw runtime_error("Unsupported target");
+			throw std::runtime_error("Unsupported target");
 	}
 	
 	return result;
@@ -731,10 +729,10 @@ class MResourceFile
 
 	void AddEntry(fs::path inPath, const char* inData, uint32_t inSize);
 
-	MTargetCPU				mTarget;
-	int						mEABI;
-	vector<mrsrc::rsrc_imp>	mIndex;
-	vector<char>			mData, mName;
+	MTargetCPU						mTarget;
+	int								mEABI;
+	std::vector<mrsrc::rsrc_imp>	mIndex;
+	std::vector<char>				mData, mName;
 };
 
 void MResourceFile::AddEntry(fs::path inPath, const char* inData, uint32_t inSize)
@@ -754,7 +752,7 @@ void MResourceFile::AddEntry(fs::path inPath, const char* inData, uint32_t inSiz
 			child.m_name = mName.size();
 			
 			std::string n = p->string();
-			copy(n.begin(), n.end(), back_inserter(mName));
+			copy(n.begin(), n.end(), std::back_inserter(mName));
 			mName.push_back(0);
 			
 			mIndex[node].m_child = mIndex.size();
@@ -829,19 +827,19 @@ void MResourceFile::Add(const fs::path& inPath, const fs::path& inFile)
 	else
 	{
 		if (VERBOSE)
-			cerr  << "adding " << inFile << " as " << inPath / inFile.filename() << endl;
+			std::cerr  << "adding " << inFile << " as " << inPath / inFile.filename() << std::endl;
 				
 		std::ifstream f(inFile);
 	
 		if (not f.is_open())
-			throw runtime_error("Could not open data file");
+			throw std::runtime_error("Could not open data file");
 	
-		filebuf* b = f.rdbuf();
+		std::filebuf* b = f.rdbuf();
 		
-		uint32_t size = b->pubseekoff(0, ios::end, ios::in);
-		b->pubseekoff(0, ios::beg, ios::in);
+		uint32_t size = b->pubseekoff(0, std::ios::end, std::ios::in);
+		b->pubseekoff(0, std::ios::beg, std::ios::in);
 		
-		vector<char> text(size);
+		std::vector<char> text(size);
 		
 		b->sgetn(&text[0], size);
 		f.close();
@@ -867,18 +865,18 @@ int main(int argc, char* argv[])
 	{
 		po::options_description visible_options("mrc " PACKAGE_VERSION " options file1 [file2...]" );
 		visible_options.add_options()
-			("help,h",								"Display help message")
-			("version",								"Print version")
+			("help,h",									"Display help message")
+			("version",									"Print version")
 			("output,o",	po::value<std::string>(),	"Output file, this file is in the default object file format for this OS.")
 			("cpu",			po::value<std::string>(),	"CPU type, default is native CPU, available values are: i386, x86_64, powerpc32, powerpc64 and arm")
-			("header",								"This will print out the header file you need to include in your program to access your resources")
+			("header",									"This will print out the header file you need to include in your program to access your resources")
 			("root",		po::value<std::string>(),	"Root path for the stored data (in the final resource data structure")
-			("arm-eabi",	po::value<int>(),		"EABI version for ARM")
-			("verbose,v",							"Verbose output");
+			("arm-eabi",	po::value<int>(),			"EABI version for ARM")
+			("verbose,v",								"Verbose output");
 	
 		po::options_description hidden_options("hidden options");
 		hidden_options.add_options()
-			("input,i",		po::value<vector<std::string>>(),	"Input files");
+			("input,i",		po::value<std::vector<std::string>>(),	"Input files");
 	
 		po::options_description cmdline_options;
 		cmdline_options.add(visible_options).add(hidden_options);
@@ -892,7 +890,7 @@ int main(int argc, char* argv[])
 		
 		if (vm.count("version"))
 		{
-			cout << PACKAGE_NAME << " version " PACKAGE_VERSION << endl;
+			std::cout << PACKAGE_NAME << " version " PACKAGE_VERSION << std::endl;
 			exit(0);
 		}
 	
@@ -902,14 +900,14 @@ int main(int argc, char* argv[])
 			
 			std::string text(data.data(), data.size());
 			
-			cout << text << endl;
+			std::cout << text << std::endl;
 			exit(0);
 		}
 		
 		if (vm.count("help") or vm.count("input") == 0)
 		{
-			cerr << visible_options << endl
-				 << "See man mrc for more help" << endl;
+			std::cerr << visible_options << std::endl
+				 << "See man mrc for more help" << std::endl;
 			exit(vm.count("help") == 0);
 		}
 		
@@ -929,7 +927,7 @@ int main(int argc, char* argv[])
 			else if (cpu == "powerpc32")	target = eCPU_PowerPC_32;
 			else if (cpu == "powerpc64")	target = eCPU_PowerPC_64;
 			else if (cpu == "arm")			target = eCPU_Arm;
-			else							throw runtime_error("Unsupported CPU type: " + cpu);
+			else							throw std::runtime_error("Unsupported CPU type: " + cpu);
 		}
 		
 		int eabi = 5;
@@ -937,14 +935,14 @@ int main(int argc, char* argv[])
 			eabi = vm["eabi"].as<int>();
 	
 		MResourceFile rsrcFile(target, eabi);
-		for (fs::path i: vm["input"].as<vector<std::string>>())
+		for (fs::path i: vm["input"].as<std::vector<std::string>>())
 			rsrcFile.Add(ns, i);
 		
 		rsrcFile.Write(vm["output"].as<std::string>());
 	}
-	catch (const exception& ex)
+	catch (const std::exception& ex)
 	{
-		cerr << "Error executing mrc: " << ex.what() << endl;
+		std::cerr << "Error executing mrc: " << ex.what() << std::endl;
 		exit(1);
 	}
 	
