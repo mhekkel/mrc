@@ -57,20 +57,6 @@ int VERBOSE = 0;
 
 // --------------------------------------------------------------------
 
-enum class MTargetCPU : Elf32_Half
-{
-	eCPU_Unknown	= EM_NONE,
-	eCPU_386		= EM_386,
-	eCPU_x86_64		= EM_X86_64,
-	eCPU_PowerPC_32	= EM_PPC,
-	eCPU_PowerPC_64	= EM_PPC64,
-	
-	// nieuw!
-	eCPU_Arm		= EM_ARM
-};
-
-// --------------------------------------------------------------------
-
 uint32_t AddNameToNameTable(std::string& ioNameTable, const std::string& inName)
 {
 	uint32_t result = 0;
