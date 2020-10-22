@@ -269,8 +269,6 @@ struct ElfClass;
 
 template<> struct ElfClass<ELFCLASS32>
 {
-	const int ElfClass = ELFCLASS32;
-
 	using Elf_Ehdr = Elf32_Ehdr;
 	using Elf_Shdr = Elf32_Shdr;
 	using Elf_Sym = Elf32_Sym;
@@ -281,8 +279,6 @@ template<> struct ElfClass<ELFCLASS32>
 
 template<> struct ElfClass<ELFCLASS64>
 {
-	const int ElfClass = ELFCLASS64;
-
 	using Elf_Ehdr = Elf64_Ehdr;
 	using Elf_Shdr = Elf64_Shdr;
 	using Elf_Sym = Elf64_Sym;
@@ -296,15 +292,11 @@ struct ElfData;
 
 template<> struct ElfData<ELFDATA2LSB>
 {
-	const int ElfData = ELFDATA2LSB;
-
 	using swapper = Swap::msb_swapper;
 };
 
 template<> struct ElfData<ELFDATA2MSB>
 {
-	const int ElfData = ELFDATA2MSB;
-
 	using swapper = Swap::lsb_swapper;
 };
 
