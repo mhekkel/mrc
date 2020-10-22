@@ -103,48 +103,46 @@ uint32_t AddNameToNameTable(std::string& ioNameTable, const std::string& inName)
 
 struct MObjectFileImp
 {
-	fs::path
-					mFile;
-	uint32_t		mTextSize;
-	uint32_t		mDataSize;
-					
-	virtual			~MObjectFileImp() {}
-	
-	virtual void	Write(const fs::path& inFile) = 0;
+	fs::path mFile;
+	uint32_t mTextSize;
+	uint32_t mDataSize;
 
-	static MObjectFileImp* Create(int machine, int elf_class, int elf_data, int flags);
+	virtual ~MObjectFileImp() {}
+
+	virtual void Write(const fs::path &inFile) = 0;
+
+	static MObjectFileImp *Create(int machine, int elf_class, int elf_data, int flags);
 
   protected:
-
 	friend class MObjectFile;
 
 	struct MGlobal
 	{
-		std::string	name;
-		std::string	data;
+		std::string name;
+		std::string data;
 	};
 
-	typedef std::vector<MGlobal>	MGlobals;
-	
-	MGlobals		mGlobals;
+	typedef std::vector<MGlobal> MGlobals;
+
+	MGlobals mGlobals;
 };
 
 class MObjectFile
 {
   public:
-					MObjectFile(int machine, int elf_class, int elf_data, int flags)
-						: mImpl(MObjectFileImp::Create(machine, elf_class, elf_data, flags))
-					{}
+	MObjectFile(int machine, int elf_class, int elf_data, int flags)
+		: mImpl(MObjectFileImp::Create(machine, elf_class, elf_data, flags))
+	{
+	}
 
-					~MObjectFile();
+	~MObjectFile();
 
-	void			AddGlobal(const std::string& inName, const void* inData, uint32_t inSize);
-	void			Write(const fs::path& inFile);
+	void AddGlobal(const std::string &inName, const void *inData, uint32_t inSize);
+	void Write(const fs::path &inFile);
 
   private:
-	MObjectFileImp*	mImpl;
+	MObjectFileImp *mImpl;
 };
-
 
 MObjectFile::~MObjectFile()
 {
@@ -173,45 +171,21 @@ void MObjectFile::Write(const fs::path& inFile)
 
 namespace Swap
 {
+
 struct no_swapper
 {
 	template<typename T>
-	T			operator()(T inValue) const			{ return inValue; }
+	T operator()(T inValue) const			{ return inValue; }
 };
 
 struct swapper
 {
 	template<typename T>
-	T			operator()(T inValue) const
-	{
-		this_will_not_compile_I_hope(inValue);
-	}
+	T operator()(T inValue) const			{ return inValue; }
 };
 
 template<>
-inline
-bool swapper::operator()(bool inValue) const
-{
-	return inValue;
-}
-
-template<>
-inline
-int8_t swapper::operator()(int8_t inValue) const
-{
-	return inValue;
-}
-
-template<>
-inline
-uint8_t swapper::operator()(uint8_t inValue) const
-{
-	return inValue;
-}
-
-template<>
-inline
-int16_t swapper::operator()(int16_t inValue) const
+inline int16_t swapper::operator()(int16_t inValue) const
 {
 	return static_cast<int16_t>(
 		((inValue & 0xFF00UL) >>  8) |
@@ -220,8 +194,7 @@ int16_t swapper::operator()(int16_t inValue) const
 }
 
 template<>
-inline
-uint16_t swapper::operator()(uint16_t inValue) const
+inline uint16_t swapper::operator()(uint16_t inValue) const
 {
 	return static_cast<uint16_t>(
 		((inValue & 0xFF00UL) >>  8) |
@@ -230,8 +203,7 @@ uint16_t swapper::operator()(uint16_t inValue) const
 }
 
 template<>
-inline
-int32_t swapper::operator()(int32_t inValue) const
+inline int32_t swapper::operator()(int32_t inValue) const
 {
 	return static_cast<int32_t>(
 		((inValue & 0xFF000000UL) >> 24) |
@@ -242,8 +214,7 @@ int32_t swapper::operator()(int32_t inValue) const
 }
 
 template<>
-inline
-uint32_t swapper::operator()(uint32_t inValue) const
+inline uint32_t swapper::operator()(uint32_t inValue) const
 {
 	return static_cast<uint32_t>(
 		((inValue & 0xFF000000UL) >> 24) |
@@ -253,21 +224,8 @@ uint32_t swapper::operator()(uint32_t inValue) const
 	);
 }
 
-//template<>
-//inline
-//long unsigned int swapper::operator()(long unsigned int inValue) const
-//{
-//	return static_cast<long unsigned int>(
-//		((inValue & 0xFF000000UL) >> 24) |
-//		((inValue & 0x00FF0000UL) >>  8) |
-//		((inValue & 0x0000FF00UL) <<  8) |
-//		((inValue & 0x000000FFUL) << 24)
-//	);
-//}
-//
 template<>
-inline
-int64_t swapper::operator()(int64_t inValue) const
+inline int64_t swapper::operator()(int64_t inValue) const
 {
 	return static_cast<int64_t>(
 		(((static_cast<uint64_t>(inValue))<<56) & 0xFF00000000000000ULL)  |
@@ -281,8 +239,7 @@ int64_t swapper::operator()(int64_t inValue) const
 }
 
 template<>
-inline
-uint64_t swapper::operator()(uint64_t inValue) const
+inline uint64_t swapper::operator()(uint64_t inValue) const
 {
 	return static_cast<uint64_t>(
 		((((uint64_t)inValue)<<56) & 0xFF00000000000000ULL)  |
@@ -298,13 +255,9 @@ uint64_t swapper::operator()(uint64_t inValue) const
 #if defined(LITTLE_ENDIAN)
 typedef no_swapper	lsb_swapper;
 typedef swapper		msb_swapper;
-
-typedef swapper		net_swapper;
 #elif defined(BIG_ENDIAN)
 typedef swapper		lsb_swapper;
 typedef no_swapper	msb_swapper;
-
-typedef no_swapper	net_swapper;
 #else
 #error Undefined endianness
 #endif
@@ -356,30 +309,19 @@ template<> struct ElfData<ELFDATA2MSB>
 };
 
 template<int ELF_CLASS, int ELF_DATA>
-struct MElfTraits
-{
-	using Elf_Ehdr = typename ElfClass<ELF_CLASS>::Elf_Ehdr;
-	using Elf_Shdr = typename ElfClass<ELF_CLASS>::Elf_Shdr;
-	using Elf_Sym = typename ElfClass<ELF_CLASS>::Elf_Sym;
-
-	using Elf_Word = typename ElfClass<ELF_CLASS>::Elf_Word;
-	using Elf_Half = typename ElfClass<ELF_CLASS>::Elf_Half;
-
-	using swapper = typename ElfData<ELF_DATA>::swapper;
-};
-
-template<int ELF_CLASS, int ELF_DATA,
-	typename traits = MElfTraits<ELF_CLASS, ELF_DATA>
->
 struct MELFObjectFileImp : public MObjectFileImp
 {
-	using swapper = typename traits::swapper;
-	using Elf_Ehdr = typename traits::Elf_Ehdr;
-	using Elf_Shdr = typename traits::Elf_Shdr;
-	using Elf_Sym = typename traits::Elf_Sym;
+	using ElfClass = ElfClass<ELF_CLASS>;
+	using ElfData = ElfData<ELF_DATA>;
 
-	using Elf_Word = typename traits::Elf_Word;
-	using Elf_Half = typename traits::Elf_Half;
+	using swapper = typename ElfData::swapper;
+
+	using Elf_Ehdr = typename ElfClass::Elf_Ehdr;
+	using Elf_Shdr = typename ElfClass::Elf_Shdr;
+	using Elf_Sym = typename ElfClass::Elf_Sym;
+
+	using Elf_Word = typename ElfClass::Elf_Word;
+	using Elf_Half = typename ElfClass::Elf_Half;
 
 	virtual void Write(const fs::path& inFile) override;
 
@@ -430,8 +372,8 @@ enum {
 	kSymbolCount
 };
 
-template<int ELF_CLASS, int ELF_DATA, typename traits>
-void MELFObjectFileImp<ELF_CLASS, ELF_DATA, traits>::Write(const fs::path& inFile)
+template<int ELF_CLASS, int ELF_DATA>
+void MELFObjectFileImp<ELF_CLASS, ELF_DATA>::Write(const fs::path& inFile)
 {
 	std::ofstream f(inFile, std::ios::binary | std::ios::trunc);
 	if (not f.is_open())
@@ -484,17 +426,17 @@ void MELFObjectFileImp<ELF_CLASS, ELF_DATA, traits>::Write(const fs::path& inFil
 
 	uint32_t sym_offset = data_offset;
 
-	for (MGlobals::iterator g = mGlobals.begin(); g != mGlobals.end(); ++g)
+	for (const auto& [name, data]: mGlobals)
 	{
-		sym.st_name = AddNameToNameTable(strtab, g->name);
+		sym.st_name = AddNameToNameTable(strtab, name);
 		sym.st_value = sym_offset - data_offset;
-		sym.st_size = g->data.length();
+		sym.st_size = data.length();
 		sym.st_info = ELF32_ST_INFO(STB_GLOBAL, STT_OBJECT);
 		sym.st_shndx = kDataSection;
 		
 		syms.push_back(sym);
 		
-		sym_offset = WriteDataAligned(f, g->data.c_str(), g->data.length(), 8);
+		sym_offset = WriteDataAligned(f, data.c_str(), data.length(), 8);
 	}
 	
 	uint32_t data_size = sym_offset;
