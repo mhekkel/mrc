@@ -8,6 +8,7 @@ mrc [\fB-o\fR|\fB--output\fR outputfile]
     [\fB--cpu\fR arg]
     [\fB--arm-eabi\fR arg]
     [\fB--root\fR arg]
+    [\fB--resource-prefix\fR arg]
     file1 [file2...]
 .sp
 mrc [\fB-h\fR|\fB--help\fR]
@@ -55,6 +56,10 @@ Accepted values for the argument are \fi386\fR, \fBx86_64\fR,
 \fB--arm-eabi\fR number
 When the cpu is \fBarm\fR the EABI for this processor can be 
 specified using this option. Accepted values are \fB1\fR through \fB5\fR.
+.TP
+\fB--resource-prefix\fR name
+Use this option to specify another name for the global variables
+in the data section.
 .TP
 \fB--root\fR
 The resources are accessed using a path. You can specify the root part
@@ -123,7 +128,8 @@ The data is then flattened into three data structures and these
 are written to the \fB.data\fR section of the object file. The
 three data blobs are then made available as globals in your
 application with the names \fBgResourceIndex\fR,
-\fBgResourceName\fR and \fBgResourceData\fR.
+\fBgResourceName\fR and \fBgResourceData\fR. You can specify the
+prefix part of this variable with the -fB--resource-prefix\fR option.
 .sp
 The index entries have the following format:
     struct rsrc_imp

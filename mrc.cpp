@@ -42,6 +42,10 @@
 
 #include <elf.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 #include <boost/program_options.hpp>
 
 #include "mrsrc.h"
@@ -53,17 +57,16 @@ int VERBOSE = 0;
 
 // --------------------------------------------------------------------
 
-enum MTargetCPU
+enum class MTargetCPU : Elf32_Half
 {
-	eCPU_Unknown,
-	eCPU_native,
-	eCPU_386,
-	eCPU_x86_64,
-	eCPU_PowerPC_32,
-	eCPU_PowerPC_64,
+	eCPU_Unknown	= EM_NONE,
+	eCPU_386		= EM_386,
+	eCPU_x86_64		= EM_X86_64,
+	eCPU_PowerPC_32	= EM_PPC,
+	eCPU_PowerPC_64	= EM_PPC64,
 	
 	// nieuw!
-	eCPU_Arm
+	eCPU_Arm		= EM_ARM
 };
 
 // --------------------------------------------------------------------
@@ -109,7 +112,7 @@ struct MObjectFileImp
 	
 	virtual void	Write(const fs::path& inFile) = 0;
 
-	static MObjectFileImp* Create(MTargetCPU inTarget, int EABI);
+	static MObjectFileImp* Create(int machine, int elf_class, int elf_data, int flags);
 
   protected:
 
@@ -129,7 +132,10 @@ struct MObjectFileImp
 class MObjectFile
 {
   public:
-					MObjectFile(MTargetCPU inTarget, int EABI);
+					MObjectFile(int machine, int elf_class, int elf_data, int flags)
+						: mImpl(MObjectFileImp::Create(machine, elf_class, elf_data, flags))
+					{}
+
 					~MObjectFile();
 
 	void			AddGlobal(const std::string& inName, const void* inData, uint32_t inSize);
@@ -139,10 +145,6 @@ class MObjectFile
 	MObjectFileImp*	mImpl;
 };
 
-MObjectFile::MObjectFile(MTargetCPU inTarget, int EABI)
-	: mImpl(MObjectFileImp::Create(inTarget, EABI))
-{
-}
 
 MObjectFile::~MObjectFile()
 {
@@ -309,114 +311,88 @@ typedef no_swapper	net_swapper;
 	
 }
 
-template<MTargetCPU CPU, int FLAGS>
-struct MCPUTraits
+template<int ELF_CLASS>
+struct ElfClass;
+
+template<> struct ElfClass<ELFCLASS32>
 {
+	const int ElfClass = ELFCLASS32;
+
+	using Elf_Ehdr = Elf32_Ehdr;
+	using Elf_Shdr = Elf32_Shdr;
+	using Elf_Sym = Elf32_Sym;
+
+	using Elf_Word = Elf64_Word;
+	using Elf_Half = Elf64_Half;
 };
 
-template<>
-struct MCPUTraits<eCPU_PowerPC_32,0>
+template<> struct ElfClass<ELFCLASS64>
 {
-	typedef Elf32_Ehdr	Elf_Ehdr;
-	typedef Elf32_Shdr	Elf_Shdr;
-	typedef Elf32_Sym	Elf_Sym;
-	
-	typedef Swap::msb_swapper	swapper;
-	
-	enum {
-		ElfClass	= ELFCLASS32,
-		ElfData		= ELFDATA2MSB,
-		ElfMachine	= EM_PPC,
-		ElfFlags	= 0
-	};
+	const int ElfClass = ELFCLASS64;
+
+	using Elf_Ehdr = Elf64_Ehdr;
+	using Elf_Shdr = Elf64_Shdr;
+	using Elf_Sym = Elf64_Sym;
+
+	using Elf_Word = Elf64_Word;
+	using Elf_Half = Elf64_Half;
 };
 
-template<>
-struct MCPUTraits<eCPU_PowerPC_64,0>
+template<int ELF_DATA>
+struct ElfData;
+
+template<> struct ElfData<ELFDATA2LSB>
 {
-	typedef Elf64_Ehdr	Elf_Ehdr;
-	typedef Elf64_Shdr	Elf_Shdr;
-	typedef Elf64_Sym	Elf_Sym;
-	
-	typedef Swap::msb_swapper	swapper;
-	
-	enum {
-		ElfClass	= ELFCLASS64,
-		ElfData		= ELFDATA2MSB,
-		ElfMachine	= EM_PPC64,
-		ElfFlags	= 0
-	};
+	const int ElfData = ELFDATA2LSB;
+
+	using swapper = Swap::msb_swapper;
 };
 
-template<>
-struct MCPUTraits<eCPU_x86_64,0>
+template<> struct ElfData<ELFDATA2MSB>
 {
-	typedef Elf64_Ehdr	Elf_Ehdr;
-	typedef Elf64_Shdr	Elf_Shdr;
-	typedef Elf64_Sym	Elf_Sym;
+	const int ElfData = ELFDATA2MSB;
 
-	typedef Swap::lsb_swapper	swapper;
-	
-	enum {
-		ElfClass	= ELFCLASS64,
-		ElfData		= ELFDATA2LSB,
-		ElfMachine	= EM_X86_64,
-		ElfFlags	= 0
-	};
+	using swapper = Swap::lsb_swapper;
 };
 
-template<>
-struct MCPUTraits<eCPU_386,0>
+template<int ELF_CLASS, int ELF_DATA>
+struct MElfTraits
 {
-	typedef Elf32_Ehdr	Elf_Ehdr;
-	typedef Elf32_Shdr	Elf_Shdr;
-	typedef Elf32_Sym	Elf_Sym;
-	
-	typedef Swap::lsb_swapper	swapper;
-	
-	enum {
-		ElfClass	= ELFCLASS32,
-		ElfData		= ELFDATA2LSB,
-		ElfMachine	= EM_386,
-		ElfFlags	= 0
-	};
+	using Elf_Ehdr = typename ElfClass<ELF_CLASS>::Elf_Ehdr;
+	using Elf_Shdr = typename ElfClass<ELF_CLASS>::Elf_Shdr;
+	using Elf_Sym = typename ElfClass<ELF_CLASS>::Elf_Sym;
+
+	using Elf_Word = typename ElfClass<ELF_CLASS>::Elf_Word;
+	using Elf_Half = typename ElfClass<ELF_CLASS>::Elf_Half;
+
+	using swapper = typename ElfData<ELF_DATA>::swapper;
 };
 
-template<int EABI>
-struct MCPUTraits<eCPU_Arm, EABI>
-{
-	typedef Elf32_Ehdr	Elf_Ehdr;
-	typedef Elf32_Shdr	Elf_Shdr;
-	typedef Elf32_Sym	Elf_Sym;
-	
-	typedef Swap::lsb_swapper	swapper;
-	
-	enum {
-		ElfClass	= ELFCLASS32,
-		ElfData		= ELFDATA2LSB,
-		ElfMachine	= EM_ARM,
-		ElfFlags	= EABI
-	};
-};
-
-template<
-	MTargetCPU CPU,
-	int FLAGS = 0,
-	typename traits = MCPUTraits<CPU,FLAGS>
+template<int ELF_CLASS, int ELF_DATA,
+	typename traits = MElfTraits<ELF_CLASS, ELF_DATA>
 >
 struct MELFObjectFileImp : public MObjectFileImp
 {
-	typedef typename traits::swapper	swapper;
-	typedef typename traits::Elf_Ehdr	Elf_Ehdr;
-	typedef typename traits::Elf_Shdr	Elf_Shdr;
-	typedef typename traits::Elf_Sym	Elf_Sym;
+	using swapper = typename traits::swapper;
+	using Elf_Ehdr = typename traits::Elf_Ehdr;
+	using Elf_Shdr = typename traits::Elf_Shdr;
+	using Elf_Sym = typename traits::Elf_Sym;
 
-	void Write(const fs::path& inFile);
+	using Elf_Word = typename traits::Elf_Word;
+	using Elf_Half = typename traits::Elf_Half;
+
+	virtual void Write(const fs::path& inFile) override;
+
+	MELFObjectFileImp(int machine, int flags)
+		: MObjectFileImp()
+		, mMachine(machine)
+		, mFlags(flags)
+	{
+	}
+
+	Elf_Half mMachine;
+	Elf_Word mFlags;
 };
-
-MObjectFileImp* CreateELFObjectFileImp(MTargetCPU inTarget);
-
-#if not (defined(__APPLE__) and defined(__MACH__))
 
 uint32_t WriteDataAligned(std::ofstream& inStream, const void* inData, uint32_t inSize, uint32_t inAlignment = 1)
 {
@@ -454,13 +430,8 @@ enum {
 	kSymbolCount
 };
 
-template
-<
-	MTargetCPU	CPU,
-	int			FLAGS,
-	typename	traits
->
-void MELFObjectFileImp<CPU, FLAGS, traits>::Write(const fs::path& inFile)
+template<int ELF_CLASS, int ELF_DATA, typename traits>
+void MELFObjectFileImp<ELF_CLASS, ELF_DATA, traits>::Write(const fs::path& inFile)
 {
 	std::ofstream f(inFile, std::ios::binary | std::ios::trunc);
 	if (not f.is_open())
@@ -469,14 +440,14 @@ void MELFObjectFileImp<CPU, FLAGS, traits>::Write(const fs::path& inFile)
 	Elf_Ehdr eh = {
 							// e_ident
 		{ ELFMAG0, ELFMAG1, ELFMAG2, ELFMAG3,
-			traits::ElfClass, traits::ElfData, EV_CURRENT },
+			ELF_CLASS, ELF_DATA, EV_CURRENT },
 		ET_REL,				// e_type
-		traits::ElfMachine,	// e_machine
+		mMachine,			// e_machine
 		EV_CURRENT,			// e_version
 		0,					// e_entry
 		0,					// e_phoff
 		0,					// e_shoff
-		traits::ElfFlags,	// e_flags
+		mFlags,				// e_flags
 		sizeof(Elf_Ehdr),	// e_ehsize
 		0,					// e_phentsize
 		0,					// e_phnum
@@ -642,81 +613,38 @@ void MELFObjectFileImp<CPU, FLAGS, traits>::Write(const fs::path& inFile)
 	WriteDataAligned(f, &eh, sizeof(eh));
 }
 
-MObjectFileImp* MObjectFileImp::Create(MTargetCPU inTarget, int EABI)
+MObjectFileImp* MObjectFileImp::Create(int machine, int elf_class, int elf_data, int flags)
 {
 	MObjectFileImp* result = nullptr;
 
-	if (inTarget == eCPU_native)
+	if (elf_class == ELFCLASS32 and elf_data == ELFDATA2LSB)
+		result = new MELFObjectFileImp<ELFCLASS32, ELFDATA2LSB>(machine, flags);
+	else if (elf_class == ELFCLASS32 and elf_data == ELFDATA2MSB)
+		result = new MELFObjectFileImp<ELFCLASS32, ELFDATA2MSB>(machine, flags);
+	else if (elf_class == ELFCLASS64 and elf_data == ELFDATA2LSB)
+		result = new MELFObjectFileImp<ELFCLASS64, ELFDATA2LSB>(machine, flags);
+	else if (elf_class == ELFCLASS64 and elf_data == ELFDATA2MSB)
+		result = new MELFObjectFileImp<ELFCLASS64, ELFDATA2MSB>(machine, flags);
+	else 
 	{
-#if defined(__x86_64)
-		inTarget = eCPU_x86_64;
-#elif defined(__i686) or defined(__i386)
-		inTarget = eCPU_386;
-#elif defined(__arm__)
-		inTarget = eCPU_Arm;
-#else
-		throw runtime_error("cannot determine native CPU format");
-#endif
-	}
-
-	switch (inTarget)
-	{
-		case eCPU_386:
-			result = new MELFObjectFileImp<eCPU_386>();
-			break;
-		
-		case eCPU_x86_64:
-			result = new MELFObjectFileImp<eCPU_x86_64>();
-			break;
-		
-		case eCPU_PowerPC_32:
-			result = new MELFObjectFileImp<eCPU_PowerPC_32>();
-			break;
-		
-		case eCPU_PowerPC_64:
-			result = new MELFObjectFileImp<eCPU_PowerPC_64>();
-			break;
-		
-		case eCPU_Arm:
-			if (EABI < 1 or EABI > 5)
-				throw std::runtime_error("Need to specify valid EABI for ARM");
-				
-			switch (EABI)
-			{
-				case 1:	
-					result = new MELFObjectFileImp<eCPU_Arm,EF_ARM_EABI_VER1>();
-					break;
-				case 2:	
-					result = new MELFObjectFileImp<eCPU_Arm,EF_ARM_EABI_VER2>();
-					break;
-				case 3:	
-					result = new MELFObjectFileImp<eCPU_Arm,EF_ARM_EABI_VER3>();
-					break;
-				case 4:	
-					result = new MELFObjectFileImp<eCPU_Arm,EF_ARM_EABI_VER4>();
-					break;
-				case 5:	
-					result = new MELFObjectFileImp<eCPU_Arm,EF_ARM_EABI_VER5>();
-					break;
-			}
-			break;
-
-		default:
-			throw std::runtime_error("Unsupported target");
+		std::cerr << "Unsupported ELF class and/or data" << std::endl;
+		exit(1);
 	}
 	
 	return result;
 }
-
-#endif
 
 // --------------------------------------------------------------------
 
 class MResourceFile
 {
   public:
-	MResourceFile(MTargetCPU inTarget, int eabi)
-		: mTarget(inTarget), mEABI(eabi)
+	MResourceFile(int machine, int elf_class, int elf_data, int flags, const std::string& prefix)
+		: mMachine(machine)
+		, mElfClass(elf_class)
+		, mElfData(elf_data)
+		, mFlags(flags)
+		, mPrefix(prefix)
 	{
 		mIndex.push_back({});
 		mName.push_back(0);
@@ -729,10 +657,10 @@ class MResourceFile
 
 	void AddEntry(fs::path inPath, const char* inData, uint32_t inSize);
 
-	MTargetCPU						mTarget;
-	int								mEABI;
+	int 							mMachine, mElfClass, mElfData, mFlags;
 	std::vector<mrsrc::rsrc_imp>	mIndex;
 	std::vector<char>				mData, mName;
+	std::string						mPrefix;
 };
 
 void MResourceFile::AddEntry(fs::path inPath, const char* inData, uint32_t inSize)
@@ -850,14 +778,16 @@ void MResourceFile::Add(const fs::path& inPath, const fs::path& inFile)
 
 void MResourceFile::Write(const fs::path& inFile)
 {
-	MObjectFile obj(mTarget, mEABI);
+	MObjectFile obj(mMachine, mElfClass, mElfData, mFlags);
 
-	obj.AddGlobal("gResourceIndex", &mIndex[0], mIndex.size() * sizeof(mrsrc::rsrc_imp));
-	obj.AddGlobal("gResourceData", &mData[0], mData.size());
-	obj.AddGlobal("gResourceName", &mName[0], mName.size());
+	obj.AddGlobal(mPrefix + "Index", &mIndex[0], mIndex.size() * sizeof(mrsrc::rsrc_imp));
+	obj.AddGlobal(mPrefix + "Data", &mData[0], mData.size());
+	obj.AddGlobal(mPrefix + "Name", &mName[0], mName.size());
 	
 	obj.Write(inFile);
 }
+
+// --------------------------------------------------------------------
 
 int main(int argc, char* argv[])
 {
@@ -872,6 +802,9 @@ int main(int argc, char* argv[])
 			("header",									"This will print out the header file you need to include in your program to access your resources")
 			("root",		po::value<std::string>(),	"Root path for the stored data (in the final resource data structure")
 			("arm-eabi",	po::value<int>(),			"EABI version for ARM")
+			("resource-prefix",
+							po::value<std::string>()->default_value("gResource"),
+														"Prefix for the name of the global variables, default is gResource")
 			("verbose,v",								"Verbose output");
 	
 		po::options_description hidden_options("hidden options");
@@ -918,23 +851,85 @@ int main(int argc, char* argv[])
 		if (vm.count("root"))
 			ns = vm["root"].as<std::string>();
 		
-		MTargetCPU target = eCPU_native;
+		// --------------------------------------------------------------------
+		// find out the native format. Simply look at how we were assembled ourselves
+
+		int machine = EM_NONE, elf_class = 0, elf_data = 0, flags = 0;
+
+		char exePath[PATH_MAX + 1];
+		
+		int r = readlink("/proc/self/exe", exePath, PATH_MAX);
+		if (r > 0)
+		{
+			exePath[r] = 0;
+			
+			int fd = open(exePath, O_RDONLY);
+			if (fd >= 0)
+			{
+				unsigned char e_ident[16];
+
+				if (read(fd, e_ident, sizeof(e_ident)) == sizeof(e_ident) and
+					e_ident[EI_MAG0] == ELFMAG0 and e_ident[EI_MAG1] == ELFMAG1 and e_ident[EI_MAG2] == ELFMAG2 and e_ident[EI_MAG3] == ELFMAG3)
+				{
+					// Yes, we're an ELF!
+
+					elf_class = e_ident[EI_CLASS];
+					elf_data = e_ident[EI_DATA];
+
+					lseek(fd, 0, SEEK_SET);
+
+					switch (elf_class)
+					{
+						case ELFCLASS32:
+						{
+							Elf32_Ehdr hdr;
+							if (read(fd, &hdr, sizeof(hdr)) == sizeof(Elf32_Ehdr))
+							{
+								machine = hdr.e_machine;
+								flags = hdr.e_flags;
+							}
+							break;
+						}
+						
+						case ELFCLASS64:
+						{
+							Elf32_Ehdr hdr;
+							if (read(fd, &hdr, sizeof(hdr)) == sizeof(Elf32_Ehdr))
+							{
+								machine = hdr.e_machine;
+								flags = hdr.e_flags;
+							}
+							break;
+						}
+
+						default:
+							std::cerr << "Unknown ELF class" << std::endl;
+					}
+				}
+			}
+		}
+		
 		if (vm.count("cpu"))
 		{
 			std::string cpu = vm["cpu"].as<std::string>();
-			if (cpu == "i386")				target = eCPU_386;
-			else if (cpu == "x86_64")		target = eCPU_x86_64;
-			else if (cpu == "powerpc32")	target = eCPU_PowerPC_32;
-			else if (cpu == "powerpc64")	target = eCPU_PowerPC_64;
-			else if (cpu == "arm")			target = eCPU_Arm;
+			if (cpu == "i386")				machine = EM_386;
+			else if (cpu == "x86_64")		machine = EM_X86_64;
+			else if (cpu == "powerpc32")	machine = EM_PPC;
+			else if (cpu == "powerpc64")	machine = EM_PPC64;
+			else if (cpu == "arm")			machine = EM_ARM;
 			else							throw std::runtime_error("Unsupported CPU type: " + cpu);
 		}
-		
-		int eabi = 5;
-		if (vm.count("eabi"))
-			eabi = vm["eabi"].as<int>();
+
+		if (machine == EM_ARM)
+		{
+			flags = 5;
+			if (vm.count("eabi"))
+				flags = vm["eabi"].as<int>();
+		}
 	
-		MResourceFile rsrcFile(target, eabi);
+		std::string prefix = vm["resource-prefix"].as<std::string>();
+
+		MResourceFile rsrcFile(machine, elf_class, elf_data, flags, prefix);
 		for (fs::path i: vm["input"].as<std::vector<std::string>>())
 			rsrcFile.Add(ns, i);
 		
