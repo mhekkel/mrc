@@ -303,17 +303,14 @@ template<> struct ElfData<ELFDATA2MSB>
 template<int ELF_CLASS, int ELF_DATA>
 struct MELFObjectFileImp : public MObjectFileImp
 {
-	using ElfClass = ElfClass<ELF_CLASS>;
-	using ElfData = ElfData<ELF_DATA>;
+	using swapper = typename ElfData<ELF_DATA>::swapper;
 
-	using swapper = typename ElfData::swapper;
+	using Elf_Ehdr = typename ElfClass<ELF_CLASS>::Elf_Ehdr;
+	using Elf_Shdr = typename ElfClass<ELF_CLASS>::Elf_Shdr;
+	using Elf_Sym = typename ElfClass<ELF_CLASS>::Elf_Sym;
 
-	using Elf_Ehdr = typename ElfClass::Elf_Ehdr;
-	using Elf_Shdr = typename ElfClass::Elf_Shdr;
-	using Elf_Sym = typename ElfClass::Elf_Sym;
-
-	using Elf_Word = typename ElfClass::Elf_Word;
-	using Elf_Half = typename ElfClass::Elf_Half;
+	using Elf_Word = typename ElfClass<ELF_CLASS>::Elf_Word;
+	using Elf_Half = typename ElfClass<ELF_CLASS>::Elf_Half;
 
 	virtual void Write(const fs::path& inFile) override;
 
