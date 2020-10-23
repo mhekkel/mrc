@@ -851,12 +851,8 @@ int main(int argc, char* argv[])
 			else							throw std::runtime_error("Unsupported CPU type: " + cpu);
 		}
 
-		if (machine == EM_ARM)
-		{
-			flags = 5;
-			if (vm.count("eabi"))
-				flags = vm["eabi"].as<int>();
-		}
+		if (vm.count("eabi"))
+			flags = vm["eabi"].as<int>();
 	
 		std::string prefix = vm["resource-prefix"].as<std::string>();
 
