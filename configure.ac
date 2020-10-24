@@ -12,7 +12,7 @@ AC_ARG_VAR([DEBUG], [Build a debug version of the application])
 
 AX_BOOST_BASE([1.65.1], [], [AC_MSG_ERROR([Could not find a recent version of boost])])
 dnl somehow this configure script did not find the correct library on an ARM system with buster
-if test "x$ax_boost_user_program_options_lib"  = "x"; then
+if test "x$ax_boost_user_program_options_lib" = "x"; then
 	ax_boost_user_program_options_lib=boost_program_options
 fi
 AX_BOOST_PROGRAM_OPTIONS
