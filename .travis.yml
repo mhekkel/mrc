@@ -1,5 +1,11 @@
 language: cpp
 
+arch:
+  - amd64
+  - ppc64le
+  - s390x
+  - arm64 
+
 os:
   - linux
 
@@ -8,6 +14,7 @@ dist:
 
 compiler:
   - gcc
+  - clang
 
 addons:
   apt:
