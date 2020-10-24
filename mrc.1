@@ -5,10 +5,12 @@
 mrc \- A resource compiler
 .SH SYNOPSIS
 mrc [\fB-o\fR|\fB--output\fR outputfile]
-    [\fB--cpu\fR arg]
-    [\fB--arm-eabi\fR arg]
     [\fB--root\fR arg]
     [\fB--resource-prefix\fR arg]
+    [\fB--elf-machine\fR arg]
+    [\fB--elf-class\fR arg]
+    [\fB--elf-data\fR arg]
+    [\fB--elf-flags\fR arg]
     file1 [file2...]
 .sp
 mrc [\fB-h\fR|\fB--help\fR]
@@ -45,25 +47,33 @@ Specify the output file, the resulting file will be an object file
 you can link together with the rest of your object files into an
 executable file.
 .TP
-\fB--cpu\fR arg
-By default mrc assumes you want to create a resource file for the
-machine it runs on. But using this flag you can create files for
-other architectures, useful when cross compiling.
-.sp
-Accepted values for the argument are \fi386\fR, \fBx86_64\fR,
-\fBpowerpc32\fR, \fBpowerpc64\fR, \fBarm\fR
-.TP
-\fB--arm-eabi\fR number
-When the cpu is \fBarm\fR the EABI for this processor can be 
-specified using this option. Accepted values are \fB1\fR through \fB5\fR.
+\fB--root\fR
+The resources are accessed using a path. You can specify the root part
+of the path using this parameter.
 .TP
 \fB--resource-prefix\fR name
 Use this option to specify another name for the global variables
 in the data section.
 .TP
-\fB--root\fR
-The resources are accessed using a path. You can specify the root part
-of the path using this parameter.
+\fB--elf-machine\fR arg
+By default mrc assumes you want to create a resource file for the
+machine it runs on. But using this option you can create files for
+other architectures, useful when cross compiling.
+.sp
+The machine flag is used to specify the value of the \fIe_machine\fR
+field in the ELF header.
+.TP
+\fB--elf-class\fR number
+The ELF class to use, should be either \fI1\fR for 32-bit objects or
+\fI2\fR for 64-bit objects.
+.TP
+\fB--elf-data\fR number
+The ELF data endianness to use, should be either \fI1\fR for little-endian
+(=LSB) objects or \fI2\fR for big-endian (=MSB) objects.
+.TP
+\fB--elf-flags\fR number
+A value to store in the \fIe_flags\fR field of the ELF header. This can
+contain the EABI version for ARM e.g.
 .TP
 \fB--header\fR
 This option will print a \fBmrsrc.h\fR file to \fBstdout\fR which

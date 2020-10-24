@@ -678,8 +678,10 @@ void MResourceFile::AddEntry(fs::path inPath, const char* inData, uint32_t inSiz
 		
 		// lookup the path element in the current directory
 		uint32_t next = mIndex[node].m_child;
-		for (;;)
-		{
+		for (;;)		if (vm.count("elf-flags"))
+			elf_flags = vm["elf-flags"].as<int>();
+
+
 			const char* name = &mName[0] + mIndex[next].m_name;
 			
 			// if this is the one we're looking for, break out of the loop
@@ -784,13 +786,17 @@ int main(int argc, char* argv[])
 			("help,h",									"Display help message")
 			("version",									"Print version")
 			("output,o",	po::value<std::string>(),	"Output file, this file is in the default object file format for this OS.")
-			("cpu",			po::value<std::string>(),	"CPU type, default is native CPU, available values are: i386, x86_64, powerpc32, powerpc64 and arm")
 			("header",									"This will print out the header file you need to include in your program to access your resources")
 			("root",		po::value<std::string>(),	"Root path for the stored data (in the final resource data structure")
-			("arm-eabi",	po::value<int>(),			"EABI version for ARM")
 			("resource-prefix",
 							po::value<std::string>()->default_value("gResource"),
 														"Prefix for the name of the global variables, default is gResource")
+
+			("elf-machine",	po::value<int>(),			"The ELF machine type to use, default is same as this machine. Use one of the values from elf.h")
+			("elf-class",	po::value<int>(),			"ELF class, default is same as this machine. Acceptable values are 1 (32bit) and 2 (64bit).")
+			("elf-data",	po::value<int>(),			"ELF endianness, default is same as this machine. Acceptable values are 1 (little-endian, LSB) and 2 (big-endian, MSB).")
+			("elf-flags",	po::value<int>(),			"Processor specific flags in the ELF header, e.g. the EABI version for ARM")
+
 			("verbose,v",								"Verbose output");
 	
 		po::options_description hidden_options("hidden options");
@@ -840,7 +846,7 @@ int main(int argc, char* argv[])
 		// --------------------------------------------------------------------
 		// find out the native format. Simply look at how we were assembled ourselves
 
-		int machine = EM_NONE, elf_class = 0, elf_data = 0, flags = 0;
+		int elf_machine = EM_NONE, elf_class = 0, elf_data = 0, elf_flags = 0;
 
 		char exePath[PATH_MAX + 1];
 		
@@ -871,8 +877,8 @@ int main(int argc, char* argv[])
 							Elf32_Ehdr hdr;
 							if (read(fd, &hdr, sizeof(hdr)) == sizeof(Elf32_Ehdr))
 							{
-								machine = hdr.e_machine;
-								flags = hdr.e_flags;
+								elf_machine = hdr.e_machine;
+								elf_flags = hdr.e_flags;
 							}
 							break;
 						}
@@ -882,8 +888,8 @@ int main(int argc, char* argv[])
 							Elf32_Ehdr hdr;
 							if (read(fd, &hdr, sizeof(hdr)) == sizeof(Elf32_Ehdr))
 							{
-								machine = hdr.e_machine;
-								flags = hdr.e_flags;
+								elf_machine = hdr.e_machine;
+								elf_flags = hdr.e_flags;
 							}
 							break;
 						}
@@ -895,27 +901,21 @@ int main(int argc, char* argv[])
 			}
 		}
 		
-		if (vm.count("cpu"))
-		{
-			std::string cpu = vm["cpu"].as<std::string>();
-			if (cpu == "i386")				machine = EM_386;
-			else if (cpu == "x86_64")		machine = EM_X86_64;
-			else if (cpu == "powerpc32")	machine = EM_PPC;
-			else if (cpu == "powerpc64")	machine = EM_PPC64;
-			else if (cpu == "arm")			machine = EM_ARM;
-			else							throw std::runtime_error("Unsupported CPU type: " + cpu);
-		}
+		if (vm.count("elf-machine"))
+			elf_machine = vm["elf-machine"].as<int>();
 
-		if (machine == EM_ARM)
-		{
-			flags = 5;
-			if (vm.count("eabi"))
-				flags = vm["eabi"].as<int>();
-		}
-	
+		if (vm.count("elf-class"))
+			elf_class = vm["elf-class"].as<int>();
+
+		if (vm.count("elf-data"))
+			elf_data = vm["elf-data"].as<int>();
+
+		if (vm.count("elf-flags"))
+			elf_flags = vm["elf-flags"].as<int>();
+
 		std::string prefix = vm["resource-prefix"].as<std::string>();
 
-		MResourceFile rsrcFile(machine, elf_class, elf_data, flags, prefix);
+		MResourceFile rsrcFile(elf_machine, elf_class, elf_data, elf_flags, prefix);
 		for (fs::path i: vm["input"].as<std::vector<std::string>>())
 			rsrcFile.Add(ns, i);
 		
