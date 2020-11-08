@@ -50,6 +50,10 @@
 
 #include "mrsrc.h"
 
+#ifndef PATH_MAX
+#define PATH_MAX 1024
+#endif
+
 namespace po = boost::program_options;
 namespace fs = std::filesystem;
 
@@ -814,8 +818,8 @@ int main(int argc, char* argv[])
 						
 						case ELFCLASS64:
 						{
-							Elf32_Ehdr hdr;
-							if (read(fd, &hdr, sizeof(hdr)) == sizeof(Elf32_Ehdr))
+							Elf64_Ehdr hdr;
+							if (read(fd, &hdr, sizeof(hdr)) == sizeof(Elf64_Ehdr))
 							{
 								elf_machine = hdr.e_machine;
 								elf_flags = hdr.e_flags;
