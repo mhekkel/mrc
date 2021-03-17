@@ -654,6 +654,20 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 				IMAGE_SCN_CNT_INITIALIZED_DATA |
 					IMAGE_SCN_ALIGN_8BYTES |
 					IMAGE_SCN_MEM_READ // characteristics
+			},
+			{
+				addName(".rdata$zzz"), // name
+				0,                 // virtualSize
+				0,                 // virtualAddress
+				0,                 // sizeOfRawData
+				0,                 // pointerToRawData
+				0,                 // pointerToRelocations
+				0,                 // pointerToLineNumbers
+				0,                 // numberOfRelocations
+				0,                 // numberOfLineNumbers
+				IMAGE_SCN_CNT_INITIALIZED_DATA |
+					IMAGE_SCN_ALIGN_8BYTES |
+					IMAGE_SCN_MEM_READ // characteristics
 			}
 		};
 
@@ -692,55 +706,22 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 
 	offset = WriteDataAligned(f, PACKAGE_STRING, sizeof(PACKAGE_STRING));
 
-	auto symbolTableOffset = offset;
-
-	// auto dataSize2 = offset - rawData2Offset;
-	// auto padding2 = dataSize2 % 16 ? 16 - dataSize2 % 16 : 0;
-	// if (padding2 == 16)
-	// 	padding2 = 0;
-	// auto rawData2Size = dataSize2 + padding;
-	// auto symbolTableOffset = WriteDataAligned(f, std::string('\0', 16).data(), padding2);
+	auto dataSize2 = offset - rawData2Offset;
+	auto padding2 = dataSize2 % 16 ? 16 - dataSize2 % 16 : 0;
+	if (padding2 == 16)
+		padding2 = 0;
+	auto rawData2Size = dataSize2 + padding;
+	auto symbolTableOffset = WriteDataAligned(f, std::string('\0', 16).data(), padding2);
 
 	// We can now fill in the blanks
 
 	sectionHeaders[0].pointerToRawData = rawDataOffset;
 	sectionHeaders[0].sizeOfRawData = rawDataSize;
 
-	// sectionHeaders[4].pointerToRawData = rawData2Offset;
-	// sectionHeaders[4].sizeOfRawData = rawData2Size;
+	sectionHeaders[1].pointerToRawData = rawData2Offset;
+	sectionHeaders[1].sizeOfRawData = rawData2Size;
 
-	// create the symbols
-
-	// symbols.emplace_back(
-	// 	COFF_Symbol{
-	// 		addName(".text"),
-	// 		0,
-	// 		1,
-	// 		0,
-	// 		IMAGE_SYM_CLASS_STATIC,
-	// 		1});
-	// symbols.emplace_back(COFF_Symbol{});
-
-	// symbols.emplace_back(
-	// 	COFF_Symbol{
-	// 		addName(".data"),
-	// 		0,
-	// 		2,
-	// 		0,
-	// 		IMAGE_SYM_CLASS_STATIC,
-	// 		1});
-	// symbols.emplace_back(COFF_Symbol{});
-
-	// symbols.emplace_back(
-	// 	COFF_Symbol{
-	// 		addName(".bss"),
-	// 		0,
-	// 		3,
-	// 		0,
-	// 		IMAGE_SYM_CLASS_STATIC,
-	// 		1});
-	// symbols.emplace_back(COFF_Symbol{});
-
+	// create the rest of the symbols
 	symbols.emplace_back(
 		COFF_Symbol{
 			addName(".rdata"),
@@ -753,17 +734,17 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 	n1._filler_ = dataSize;
 	symbols.emplace_back(COFF_Symbol{ n1 });
 
-	// symbols.emplace_back(
-	// 	COFF_Symbol{
-	// 		addName(".rdata$zzz"),
-	// 		0,
-	// 		5,
-	// 		0,
-	// 		IMAGE_SYM_CLASS_STATIC,
-	// 		1});
-	// COFF_Name n2;
-	// n2._filler_ = dataSize;
-	// symbols.emplace_back(COFF_Symbol{ n2 });
+	symbols.emplace_back(
+		COFF_Symbol{
+			addName(".rdata$zzz"),
+			0,
+			5,
+			0,
+			IMAGE_SYM_CLASS_STATIC,
+			1});
+	COFF_Name n2;
+	n2._filler_ = dataSize;
+	symbols.emplace_back(COFF_Symbol{ n2 });
 
 	for (auto& sym: symbols)
 		WriteDataAligned(f, &sym, 18);
@@ -1021,7 +1002,7 @@ int main(int argc, char *argv[])
 			( "elf-data", po::value<int>(),		"ELF endianness, default is same as this machine. Acceptable values are 1 (little-endian, LSB) and 2 (big-endian, MSB)." )
 			( "elf-flags", po::value<int>(),	"Processor specific flags in the ELF header, e.g. the EABI version for ARM" )
 
-			( "coff-x64",						"Write a x64 PE/COFF file (for Windows)" )
+			( "coff", po::value<std::string>(),	"Write a PE/COFF file for Windows, values should be one of x64, x86 or arm64" )
 
 			( "verbose,v",						"Verbose output") ;
 
@@ -1140,9 +1121,19 @@ int main(int argc, char *argv[])
 		if (not file.is_open())
 			throw std::runtime_error("Could not open output file for writing");
 
-		if (vm.count("coff-x64"))
+		if (vm.count("coff"))
 		{
-			MObjectFile obj(IMAGE_FILE_MACHINE_AMD64);
+			COFF_Machine machine;
+			if (vm["coff"].as<std::string>() == "x64")
+				machine = IMAGE_FILE_MACHINE_AMD64;
+			else if (vm["coff"].as<std::string>() == "arm64")
+				machine = IMAGE_FILE_MACHINE_ARM64;
+			else if (vm["coff"].as<std::string>() == "x86")
+				machine = IMAGE_FILE_MACHINE_I386;
+			else
+				throw std::runtime_error("Unsupported machine for COFF");
+
+			MObjectFile obj(machine);
 			rsrcFile.Write(obj);
 			obj.Write(file);
 		}

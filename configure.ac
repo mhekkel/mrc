@@ -1,4 +1,12 @@
-AC_INIT(mrc, 1.2.2, [maarten@hekkelman.com])
+AC_PREREQ([2.69])
+
+m4_define([mrc_version_major],[1])
+m4_define([mrc_version_minor],[3])
+m4_define([mrc_version_micro],[0])
+m4_define([mrc_version_extra],[])
+m4_define([mrc_version],[mrc_version_major().mrc_version_minor().mrc_version_micro()mrc_version_extra])
+
+AC_INIT([mrc], [mrc_version], [maarten@hekkelman.com])
 
 dnl Switch to a C++ compiler, and check if it works.
 AC_LANG(C++)
