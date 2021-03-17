@@ -657,7 +657,7 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 					IMAGE_SCN_MEM_READ // characteristics
 			},
 			{
-				addName(".rdata$zzz"), // name
+				addName(".rdata$z"), // name
 				0,                 // virtualSize
 				0,                 // virtualAddress
 				0,                 // sizeOfRawData
@@ -732,7 +732,7 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 
 	symbols.emplace_back(
 		COFF_Symbol{
-			addName(".rdata$zzz"),
+			addName(".rdata$z"),
 			0,
 			2,
 			0,
