@@ -116,7 +116,7 @@ namespace mrsrc
 
 		unsigned long size() const { return m_impl->m_size; }
 
-		explicit operator bool() const { return m_impl != NULL and m_impl->m_size > 0; }
+		explicit operator bool() const { return m_impl != nullptr and m_impl->m_size > 0; }
 
 		template<typename RSRC>
 		class iterator_t
