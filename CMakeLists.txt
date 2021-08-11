@@ -41,7 +41,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 link_libraries(${Boost_LIBRARIES})
 
 add_custom_command(OUTPUT mrc-rsrc.obj
-	COMMAND ${CMAKE_BINARY_DIR}/$<CONFIG>/mrc-bootstrap.exe -o mrc-rsrc.obj ${PROJECT_SOURCE_DIR}/mrsrc.h --coff=${COFF_TYPE}
+	COMMAND $<TARGET_FILE:mrc-bootstrap> -o mrc-rsrc.obj ${PROJECT_SOURCE_DIR}/mrsrc.h --coff=${COFF_TYPE}
 	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/mrsrc.h mrc-bootstrap
 )
 
@@ -55,3 +55,4 @@ set(PACKAGE_STRING "${PROJECT_NAME} ${PROJECT_VERSION}")
 message("The package string is ${PACKAGE_STRING}")
 configure_file(${PROJECT_SOURCE_DIR}/mrc.h-cmake.in mrc.h)
 
+install(TARGETS mrc CONFIGURATIONS Release RUNTIME DESTINATION ${BINARY_INSTALL_DIR})
