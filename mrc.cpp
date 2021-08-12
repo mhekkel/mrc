@@ -692,17 +692,9 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 
 	for (const auto &[name, data] : mGlobals)
 	{
-		// mangled names... really!
-
-		std::string type;
-		if (name.rfind("Index") == name.length() - 5)
-			type = "@@3QBUrsrc_imp@mrsrc@@B";
-		else if (name.rfind("Name") == name.length() - 4 or name.rfind("Data") == name.length() - 4)
-			type = "@@3QBDB";
-
 		symbols.emplace_back(
 			COFF_Symbol{
-				addName("?" + name + type),
+				addName(name),
 				offset - rawDataOffset,
 				1,
 				0,
