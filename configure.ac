@@ -1,7 +1,7 @@
 AC_PREREQ([2.69])
 
 m4_define([mrc_version_major],[1])
-m4_define([mrc_version_minor],[4])
+m4_define([mrc_version_minor],[3])
 m4_define([mrc_version_micro],[0])
 m4_define([mrc_version_extra],[])
 m4_define([mrc_version],[mrc_version_major().mrc_version_minor().mrc_version_micro()mrc_version_extra])
