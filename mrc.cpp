@@ -728,8 +728,22 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 
 	offset = WriteDataAligned(f, PACKAGE_STRING, sizeof(PACKAGE_STRING));
 
-	auto rawData2Size = offset - rawData2Offset;
-	auto symbolTableOffset = offset;
+	auto data2Size = offset - rawData2Offset;
+	auto padding2 = data2Size % 16 ? 16 - data2Size % 16 : 0;
+	if (padding2 == 16)
+		padding2 = 0;
+	auto rawData2Size = data2Size + padding;
+	auto rawData3Offset = WriteDataAligned(f, std::string('\0', 16).data(), padding2);
+
+	const char linker_instruction[] = R"(/DEFAULTLIB:"LIBCMT" /DEFAULTLIB:"OLDNAMES")";
+	offset = WriteDataAligned(f, linker_instruction, sizeof(linker_instruction));
+
+	auto data3Size = offset - rawData3Offset;
+	auto padding3 = data3Size % 16 ? 16 - data3Size % 16 : 0;
+	if (padding3 == 16)
+		padding3 = 0;
+	auto rawData3Size = data3Size + padding;
+	auto symbolTableOffset = WriteDataAligned(f, std::string('\0', 16).data(), padding3);
 
 	// We can now fill in the blanks
 	sectionHeaders[0].pointerToRawData = rawDataOffset;
@@ -763,7 +777,7 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 			IMAGE_SYM_CLASS_STATIC,
 			1});
 	COFF_Name n2{};
-	n2._filler_ = dataSize;
+	n2._filler_ = data2Size;
 	symbols.emplace_back(COFF_Symbol{ n2 });
 
 	symbols.emplace_back(
