@@ -383,7 +383,7 @@ void MELFObjectFileImp<ELF_CLASS, ELF_DATA>::Write(std::ofstream &f)
 	assert((sizeof(Elf_Sym) % 8) == 0);
 
 	uint32_t symtab_size = syms.size() * sizeof(sym);
-	uint32_t strtab_off = WriteDataAligned(f, &syms[0], symtab_size, 8);
+	uint32_t strtab_off = WriteDataAligned(f, syms.data(), symtab_size, 8);
 	uint32_t shstrtab_off = WriteDataAligned(f, strtab.c_str(), strtab.length(), 8);
 
 	std::string shstrtab;
@@ -659,7 +659,7 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 					IMAGE_SCN_MEM_READ // characteristics
 			},
 			{
-				addName(".rdata$zzz"), // name
+				addName(".rdata$z"), // name
 				0,                 // virtualSize
 				0,                 // virtualAddress
 				0,                 // sizeOfRawData
@@ -669,7 +669,7 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 				0,                 // numberOfRelocations
 				0,                 // numberOfLineNumbers
 				IMAGE_SCN_CNT_INITIALIZED_DATA |
-					IMAGE_SCN_ALIGN_8BYTES |
+					IMAGE_SCN_ALIGN_1BYTES |
 					IMAGE_SCN_MEM_READ // characteristics
 			},
 			{
@@ -723,25 +723,10 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 
 	offset = WriteDataAligned(f, PACKAGE_STRING, sizeof(PACKAGE_STRING));
 
-	auto data2Size = offset - rawData2Offset;
-	auto padding2 = data2Size % 16 ? 16 - data2Size % 16 : 0;
-	if (padding2 == 16)
-		padding2 = 0;
-	auto rawData2Size = data2Size + padding;
-	auto rawData3Offset = WriteDataAligned(f, std::string('\0', 16).data(), padding2);
-
-	const char linker_instruction[] = R"(/DEFAULTLIB:"LIBCMT" /DEFAULTLIB:"OLDNAMES")";
-	offset = WriteDataAligned(f, linker_instruction, sizeof(linker_instruction));
-
-	auto data3Size = offset - rawData3Offset;
-	auto padding3 = data3Size % 16 ? 16 - data3Size % 16 : 0;
-	if (padding3 == 16)
-		padding3 = 0;
-	auto rawData3Size = data3Size + padding;
-	auto symbolTableOffset = WriteDataAligned(f, std::string('\0', 16).data(), padding3);
+	auto rawData2Size = offset - rawData2Offset;
+	auto symbolTableOffset = offset;
 
 	// We can now fill in the blanks
-
 	sectionHeaders[0].pointerToRawData = rawDataOffset;
 	sectionHeaders[0].sizeOfRawData = rawDataSize;
 
@@ -766,14 +751,14 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 
 	symbols.emplace_back(
 		COFF_Symbol{
-			addName(".rdata$zzz"),
+			addName(".rdata$z"),
 			0,
 			2,
 			0,
 			IMAGE_SYM_CLASS_STATIC,
 			1});
 	COFF_Name n2{};
-	n2._filler_ = data2Size;
+	n2._filler_ = dataSize;
 	symbols.emplace_back(COFF_Symbol{ n2 });
 
 	symbols.emplace_back(
@@ -793,11 +778,13 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 	for (auto& sym: symbols)
 		WriteDataAligned(f, &sym, 18);
 
-	auto strTabOffset = f.tellp();
-
 	uint32_t strTabSize = strtab.size() + 4;
 	WriteDataAligned(f, &strTabSize, sizeof(strTabSize));
 	WriteDataAligned(f, strtab.c_str(), strtab.size() + 1);
+
+	// write section headers
+	f.seekp(sectionHeaderStart);
+	WriteDataAligned(f, sectionHeaders, sizeof(sectionHeaders));
 
 	// Write header
 	f.seekp(0);
@@ -805,12 +792,6 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 	header.pointerToSymbolTable = symbolTableOffset;
 	header.numberOfSymbols = symbols.size();
 	WriteDataAligned(f, &header, sizeof(header));
-
-	// write section headers now, we're done with them
-
-	f.seekp(sectionHeaderStart);
-	WriteDataAligned(f, sectionHeaders, sizeof(sectionHeaders));
-
 }
 
 // --------------------------------------------------------------------
@@ -935,7 +916,7 @@ void MResourceFile::AddEntry(fs::path inPath, const char *inData, uint32_t inSiz
 		uint32_t next = mIndex[node].m_child;
 		for (;;)
 		{
-			const char *name = &mName[0] + mIndex[next].m_name;
+			const char *name = mName.data() + mIndex[next].m_name;
 
 			// if this is the one we're looking for, break out of the loop
 			if (*p == name)
@@ -1010,18 +991,18 @@ void MResourceFile::Add(const fs::path &inPath, const fs::path &inFile)
 
 		std::vector<char> text(size);
 
-		b->sgetn(&text[0], size);
+		b->sgetn(text.data(), size);
 		f.close();
 
-		AddEntry(inPath / inFile.filename(), &text[0], size);
+		AddEntry(inPath / inFile.filename(), text.data(), size);
 	}
 }
 
 void MResourceFile::Write(MObjectFile& obj)
 {
-	obj.AddGlobal(mPrefix + "Index", &mIndex[0], mIndex.size() * sizeof(mrsrc::rsrc_imp));
-	obj.AddGlobal(mPrefix + "Data", &mData[0], mData.size());
-	obj.AddGlobal(mPrefix + "Name", &mName[0], mName.size());
+	obj.AddGlobal(mPrefix + "Index", mIndex.data(), mIndex.size() * sizeof(mrsrc::rsrc_imp));
+	obj.AddGlobal(mPrefix + "Data", mData.data(), mData.size());
+	obj.AddGlobal(mPrefix + "Name", mName.data(), mName.size());
 }
 
 // --------------------------------------------------------------------
