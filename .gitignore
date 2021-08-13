@@ -11,3 +11,4 @@ aclocal.m4
 mrc-unit-test
 mrc.h
 mrc-bootstrap
+build/

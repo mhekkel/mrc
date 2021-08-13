@@ -40,7 +40,11 @@
 #include <fstream>
 #include <iostream>
 
+#if __has_include(<elf.h>)
 #include <elf.h>
+#elif not defined(EM_NONE)
+#define EM_NONE 0
+#endif
 
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -118,8 +122,7 @@ struct MObjectFileImp
 };
 
 // --------------------------------------------------------------------
-//
-//	Implementation for ELF
+// byte swapping
 
 namespace Swap
 {
@@ -212,6 +215,27 @@ typedef no_swapper msb_swapper;
 
 } // namespace Swap
 
+// --------------------------------------------------------------------
+// Write data aligned to some alignment value
+
+uint32_t WriteDataAligned(std::ofstream &inStream, const void *inData, uint32_t inSize, uint32_t inAlignment = 1)
+{
+	inStream.write(reinterpret_cast<const char *>(inData), inSize);
+
+	if (inAlignment > 1)
+	{
+		while ((inStream.tellp() % inAlignment) != 0)
+			inStream.put('\0');
+	}
+
+	return inStream.tellp();
+}
+
+// --------------------------------------------------------------------
+//
+//	Implementation for ELF
+#if __has_include(<elf.h>)
+
 template <int ELF_CLASS>
 struct ElfClass;
 
@@ -276,19 +300,6 @@ struct MELFObjectFileImp : public MObjectFileImp
 	Elf_Half mMachine;
 	Elf_Word mFlags;
 };
-
-uint32_t WriteDataAligned(std::ofstream &inStream, const void *inData, uint32_t inSize, uint32_t inAlignment = 1)
-{
-	inStream.write(reinterpret_cast<const char *>(inData), inSize);
-
-	if (inAlignment > 1)
-	{
-		while ((inStream.tellp() % inAlignment) != 0)
-			inStream.put('\0');
-	}
-
-	return inStream.tellp();
-}
 
 enum
 {
@@ -500,6 +511,8 @@ void MELFObjectFileImp<ELF_CLASS, ELF_DATA>::Write(std::ofstream &f)
 	WriteDataAligned(f, &eh, sizeof(eh));
 }
 
+#endif
+
 // --------------------------------------------------------------------
 // PE/COFF
 
@@ -529,10 +542,10 @@ struct COFF_Header
 
 union COFF_Name
 {
-	char str[8];
+	char str[8] = "";
 	struct
 	{
-		uint32_t _filler_ = 0;
+		uint32_t _filler_;
 		uint32_t offset;
 	};
 };
@@ -695,17 +708,9 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 
 	for (const auto &[name, data] : mGlobals)
 	{
-		// mangled names... really!
-
-		std::string type;
-		if (name.rfind("Index") == name.length() - 5)
-			type = "@@3QBUrsrc_imp@mrsrc@@B";
-		else if (name.rfind("Name") == name.length() - 4 or name.rfind("Data") == name.length() - 4)
-			type = "@@3QBDB";
-
 		symbols.emplace_back(
 			COFF_Symbol{
-				addName("?" + name + type),
+				addName(name),
 				offset - rawDataOffset,
 				1,
 				0,
@@ -796,6 +801,7 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 
 // --------------------------------------------------------------------
 
+#if __has_include(<elf.h>)
 MObjectFileImp *MObjectFileImp::Create(int machine, int elf_class, int elf_data, int flags)
 {
 	MObjectFileImp *result = nullptr;
@@ -816,16 +822,19 @@ MObjectFileImp *MObjectFileImp::Create(int machine, int elf_class, int elf_data,
 
 	return result;
 }
+#endif
 
 // --------------------------------------------------------------------
 
 class MObjectFile
 {
   public:
+#if __has_include(<elf.h>)
 	MObjectFile(int machine, int elf_class, int elf_data, int flags)
 		: mImpl(MObjectFileImp::Create(machine, elf_class, elf_data, flags))
 	{
 	}
+#endif
 
 	MObjectFile(COFF_Machine machine)
 		: mImpl(new MCOFFObjectFileImp(machine))
@@ -979,7 +988,7 @@ void MResourceFile::Add(const fs::path &inPath, const fs::path &inFile)
 		if (VERBOSE)
 			std::cerr << "adding " << inFile << " as " << inPath / inFile.filename() << std::endl;
 
-		std::ifstream f(inFile);
+		std::ifstream f(inFile, std::ios::binary);
 
 		if (not f.is_open())
 			throw std::runtime_error("Could not open data file");
@@ -1022,10 +1031,12 @@ int main(int argc, char *argv[])
 			( "resource-prefix",
 				po::value<std::string>()->default_value("gResource"),
 												"Prefix for the name of the global variables, default is gResource" )
+#if __has_include(<elf.h>)
 			( "elf-machine", po::value<int>(),	"The ELF machine type to use, default is same as this machine. Use one of the values from elf.h" )
 			( "elf-class", po::value<int>(),	"ELF class, default is same as this machine. Acceptable values are 1 (32bit) and 2 (64bit)." )
 			( "elf-data", po::value<int>(),		"ELF endianness, default is same as this machine. Acceptable values are 1 (little-endian, LSB) and 2 (big-endian, MSB)." )
 			( "elf-flags", po::value<int>(),	"Processor specific flags in the ELF header, e.g. the EABI version for ARM" )
+#endif
 
 			( "coff", po::value<std::string>(),	"Write a PE/COFF file for Windows, values should be one of x64, x86 or arm64" )
 
@@ -1156,12 +1167,13 @@ int main(int argc, char *argv[])
 			else if (vm["coff"].as<std::string>() == "x86")
 				machine = IMAGE_FILE_MACHINE_I386;
 			else
-				throw std::runtime_error("Unsupported machine for COFF");
+				throw std::runtime_error("Unsupported machine for COFF: " + vm["coff"].as<std::string>());
 
 			MObjectFile obj(machine);
 			rsrcFile.Write(obj);
 			obj.Write(file);
 		}
+#if __has_include(<elf.h>)
 		else
 		{
 			if (vm.count("elf-machine"))
@@ -1181,6 +1193,7 @@ int main(int argc, char *argv[])
 			rsrcFile.Write(obj);
 			obj.Write(file);
 		}
+#endif
 	}
 	catch (const std::exception &ex)
 	{

@@ -2,7 +2,7 @@
 
 #include "mrsrc.h"
 
-const mrsrc::rsrc_imp gResourceIndex[0] = {};
+const mrsrc::rsrc_imp gResourceIndex[1] = {};
 const char gResourceData[] = "\0\0\0\0";
 const char gResourceName[] = "\0\0\0\0";
 
