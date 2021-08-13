@@ -955,7 +955,7 @@ void MResourceFile::Add(const fs::path &inPath, const fs::path &inFile)
 		if (VERBOSE)
 			std::cerr << "adding " << inFile << " as " << inPath / inFile.filename() << std::endl;
 
-		std::ifstream f(inFile);
+		std::ifstream f(inFile, std::ios::binary);
 
 		if (not f.is_open())
 			throw std::runtime_error("Could not open data file");
