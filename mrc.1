@@ -75,6 +75,10 @@ The ELF data endianness to use, should be either \fI1\fR for little-endian
 A value to store in the \fIe_flags\fR field of the ELF header. This can
 contain the EABI version for ARM e.g.
 .TP
+\fB--coff\fR type
+When this option is specified, a COFF file is created for use on Windows.
+The argument \fItype\fR should be one of \fBx64\fR, \fBx86\fR or \fBarm64\fR.
+.TP
 \fB--header\fR
 This option will print a \fBmrsrc.h\fR file to \fBstdout\fR which
 you can write to disk and use to access resources.
