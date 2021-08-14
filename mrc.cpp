@@ -630,6 +630,7 @@ struct MCOFFObjectFileImp : public MObjectFileImp
 
 void MCOFFObjectFileImp::Write(std::ofstream &f)
 {
+
 	// Start by allocating a header
 	COFF_Header header =
 		{
@@ -684,20 +685,6 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 				IMAGE_SCN_CNT_INITIALIZED_DATA |
 					IMAGE_SCN_ALIGN_1BYTES |
 					IMAGE_SCN_MEM_READ // characteristics
-			},
-			{
-				addName(".drectve"), // name
-				0,                 // virtualSize
-				0,                 // virtualAddress
-				0,                 // sizeOfRawData
-				0,                 // pointerToRawData
-				0,                 // pointerToRelocations
-				0,                 // pointerToLineNumbers
-				0,                 // numberOfRelocations
-				0,                 // numberOfLineNumbers
-				IMAGE_SCN_LNK_INFO |
-					IMAGE_SCN_ALIGN_1BYTES |
-					IMAGE_SCN_LNK_REMOVE // characteristics
 			}
 		};
 
@@ -728,22 +715,8 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 
 	offset = WriteDataAligned(f, PACKAGE_STRING, sizeof(PACKAGE_STRING));
 
-	auto data2Size = offset - rawData2Offset;
-	auto padding2 = data2Size % 16 ? 16 - data2Size % 16 : 0;
-	if (padding2 == 16)
-		padding2 = 0;
-	auto rawData2Size = data2Size + padding;
-	auto rawData3Offset = WriteDataAligned(f, std::string('\0', 16).data(), padding2);
-
-	const char linker_instruction[] = R"(/DEFAULTLIB:"LIBCMT" /DEFAULTLIB:"OLDNAMES")";
-	offset = WriteDataAligned(f, linker_instruction, sizeof(linker_instruction));
-
-	auto data3Size = offset - rawData3Offset;
-	auto padding3 = data3Size % 16 ? 16 - data3Size % 16 : 0;
-	if (padding3 == 16)
-		padding3 = 0;
-	auto rawData3Size = data3Size + padding;
-	auto symbolTableOffset = WriteDataAligned(f, std::string('\0', 16).data(), padding3);
+	auto rawData2Size = offset - rawData2Offset;
+	auto symbolTableOffset = offset;
 
 	// We can now fill in the blanks
 	sectionHeaders[0].pointerToRawData = rawDataOffset;
@@ -751,9 +724,6 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 
 	sectionHeaders[1].pointerToRawData = rawData2Offset;
 	sectionHeaders[1].sizeOfRawData = rawData2Size;
-
-	sectionHeaders[2].pointerToRawData = rawData3Offset;
-	sectionHeaders[2].sizeOfRawData = rawData3Size;
 
 	// create the rest of the symbols
 	symbols.emplace_back(
@@ -777,29 +747,15 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 			IMAGE_SYM_CLASS_STATIC,
 			1});
 	COFF_Name n2{};
-	n2._filler_ = data2Size;
+	n2._filler_ = dataSize;
 	symbols.emplace_back(COFF_Symbol{ n2 });
-
-	symbols.emplace_back(
-		COFF_Symbol{
-			addName(".drectve"),
-			0,
-			3,
-			0,
-			IMAGE_SYM_CLASS_STATIC,
-			1});
-	COFF_Name n3{};
-	n2._filler_ = data3Size;
-	symbols.emplace_back(COFF_Symbol{ n3 });
-
-
 
 	for (auto& sym: symbols)
 		WriteDataAligned(f, &sym, 18);
 
 	uint32_t strTabSize = strtab.size() + 4;
 	WriteDataAligned(f, &strTabSize, sizeof(strTabSize));
-	WriteDataAligned(f, strtab.c_str(), strtab.size() + 1);
+	WriteDataAligned(f, strtab.data(), strtab.size());
 
 	// write section headers
 	f.seekp(sectionHeaderStart);
