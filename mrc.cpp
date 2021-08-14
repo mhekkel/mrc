@@ -755,7 +755,7 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 
 	uint32_t strTabSize = strtab.size() + 4;
 	WriteDataAligned(f, &strTabSize, sizeof(strTabSize));
-	WriteDataAligned(f, strtab.data(), strtab.size());
+	WriteDataAligned(f, strtab.data(), strtab.size() + 1);
 
 	// write section headers
 	f.seekp(sectionHeaderStart);
