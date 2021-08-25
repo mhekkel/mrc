@@ -17,8 +17,8 @@ if(MSVC)
 
 	# On Windows, do not install in the system location
 	if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-		message(WARNING "The executable will be installed in $ENV{LOCALAPPDATA}")
-		set(CMAKE_INSTALL_PREFIX "$ENV{LOCALAPPDATA}" CACHE PATH "..." FORCE)
+		message(WARNING "The executable will be installed in $ENV{LOCALAPPDATA}/${PROJECT_NAME}")
+		set(CMAKE_INSTALL_PREFIX "$ENV{LOCALAPPDATA}/${PROJECT_NAME}" CACHE PATH "..." FORCE)
 	endif()
 
 	# Find out the processor type for the target
