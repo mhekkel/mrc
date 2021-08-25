@@ -15,8 +15,8 @@ if(MSVC)
 
 	# On Windows, do not install in the system location
 	if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-		message(WARNING "The executable will be installed in $ENV{LOCALAPPDATA}/${PROJECT_NAME}")
-		set(CMAKE_INSTALL_PREFIX "$ENV{LOCALAPPDATA}/${PROJECT_NAME}" CACHE PATH "..." FORCE)
+		message(WARNING "The executable will be installed in $ENV{LOCALAPPDATA}")
+		set(CMAKE_INSTALL_PREFIX "$ENV{LOCALAPPDATA}" CACHE PATH "..." FORCE)
 	endif()
 
 	# Find out the processor type for the target
@@ -33,9 +33,7 @@ if(MSVC)
 	set(COFF_SPEC "--coff=${COFF_TYPE}")
 endif()
 
-set(BINARY_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}")
-
-find_package(Boost 1.73.0 REQUIRED COMPONENTS program_options)
+find_package(Boost 1.71.0 REQUIRED COMPONENTS program_options)
 
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
@@ -64,4 +62,6 @@ set(PACKAGE_STRING "${PROJECT_NAME} ${PROJECT_VERSION}")
 
 configure_file(${PROJECT_SOURCE_DIR}/mrc.h-cmake.in mrc.h)
 
-install(TARGETS mrc CONFIGURATIONS Release RUNTIME DESTINATION ${BINARY_INSTALL_DIR})
+install(TARGETS mrc
+	CONFIGURATIONS Release
+	RUNTIME DESTINATION ${BIN_INSTALL_DIR})
