@@ -1,3 +1,10 @@
+Version 1.3.1
+- Fix writing header to specified output instead of stdout
+
+Version 1.3.0
+- replaced gnu configure with cmake
+- Write COFF files (for MS Windows)
+
 Version 1.2.3
 - Should now work on all architectures.
 - replaced cpu and eabi flags with more generic --elf-xxx options.

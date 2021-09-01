@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 # set the project name
-project(mrc VERSION 1.3.0)
+project(mrc VERSION 1.3.1)
 
 enable_testing()
 
@@ -35,9 +35,15 @@ if(MSVC)
 	set(COFF_SPEC "--coff=${COFF_TYPE}")
 endif()
 
-set(BINARY_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}")
+if(UNIX AND NOT APPLE)
+	# On Linux, install in the $HOME/.local folder by default
+	if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+		message(WARNING "The library and auxiliary files will be installed in $ENV{HOME}/.local")
+		set(CMAKE_INSTALL_PREFIX "$ENV{HOME}/.local" CACHE PATH "..." FORCE)
+	endif()
+endif()
 
-find_package(Boost 1.73.0 REQUIRED COMPONENTS program_options)
+find_package(Boost 1.70.0 REQUIRED COMPONENTS program_options)
 
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})

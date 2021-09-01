@@ -1082,7 +1082,16 @@ int main(int argc, char *argv[])
 
 			std::string text(data.data(), data.size());
 
-			std::cout << text << std::endl;
+			if (vm.count("output"))
+			{
+				std::ofstream file(vm["output"].as<std::string>(), std::ios::binary);
+				if (not file.is_open())
+					throw std::runtime_error("Could not open output file for writing");
+				file << text << std::endl;
+			}
+			else
+				std::cout << text << std::endl;
+
 			exit(0);
 		}
 
