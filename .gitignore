@@ -1,14 +1,5 @@
-autom4te.cache/
-config.log
-config.status
-obj/
-obj.dbg/
 .vscode/
-GNUmakefile
 mrc
-mrc-mini
-aclocal.m4
 mrc-unit-test
-mrc.h
 mrc-bootstrap
 build/
