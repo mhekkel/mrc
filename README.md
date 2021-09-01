@@ -44,7 +44,40 @@ To create a resource file:
 	mrc -o my-rsrc.o --root texts greeting
 	c++ -o my-app foo.cpp my-rsrc.o
 
+## CMake integration
+
+mrc comes with a mrc-config.cmake file installed at a suitable location. This means you can include mrc using a `find_package` call. The previous example might have a _CMakeLists.txt_ file containing the following:
+
+```
+project(hello VERSION 1.0.0 LANGUAGES CXX)
+
+# Include the mrc package file
+find_package(Mrc)
+
+# The MRC_FOUND variable is set if MRC was found
+if(NOT MRC_FOUND)
+	message(FATAL_ERROR "mrc not found)
+endif()
+
+# Write out the mrc header file and add the directory to the include paths
+mrc_write_header(${CMAKE_CURRENT_BINARY_DIR}/mrsrc.hpp)
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+
+# The executable to create
+add_executable(mrc-user ${CMAKE_CURRENT_SOURCE_DIR}/src/mrc-user.cpp)
+
+# Add the file hello.txt in the directory rsrc as resource 'hello.txt'
+mrc_target_resources(mrc-user ${CMAKE_CURRENT_SOURCE_DIR}/rsrc/hello.txt)
+```
 
 ## Building mrc
 
-On Unix-like systems you can use the default `configure`, `make` and `make install`. However, a _CMakeLists.txt_ file for `cmake` is also available and is obviously the only option when building in Windows.
+To build mrc, you should use [cmake](https://cmake.org), e.g.:
+```
+git clone https://github.com/mhekkel/mrc.git
+cd mrc
+mkdir build
+cd build
+cmake ..
+cmake --install
+```

@@ -64,6 +64,8 @@ install(TARGETS mrc CONFIGURATIONS Release)
 
 if(WIN32)
 	install(FILES mrc-config.cmake DESTINATION cmake)
+	install(FILES mrc-manual.pdf)
 else()
 	install(FILES mrc-config.cmake DESTINATION share/mrc/cmake)
+	install(FILES mrc-manual.pdf DESTINATION share/doc/mrc)
 endif()
