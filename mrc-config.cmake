@@ -67,6 +67,7 @@ find_program(MRC_EXECUTABLE
 if(CMAKE_HOST_WIN32)
     find_program(MRC_EXECUTABLE
         NAMES mrc
+		PATHS $ENV{LOCALAPPDATA}
         PATH_SUFFIXES mrc/bin
         DOC "mrc executable"
     )
@@ -102,9 +103,23 @@ function(mrc_target_resources _target)
 
     set(RSRC_FILE "${CMAKE_CURRENT_BINARY_DIR}/${_target}_rsrc.obj")
 
+	if(CMAKE_HOST_WIN32)
+		# Find out the processor type for the target
+		if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "AMD64")
+			set(COFF_TYPE "x64")
+		elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "i386")
+			set(COFF_TYPE "x86")
+		elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "ARM64")
+			set(COFF_TYPE "arm64")
+		else()
+			message(FATAL_ERROR "Unsupported or unknown processor type ${CMAKE_SYSTEM_PROCESSOR}")
+		endif()
+
+		set(COFF_SPEC "--coff=${COFF_TYPE}")
+	endif()
+
     add_custom_command(OUTPUT ${RSRC_FILE}
-        COMMAND ${MRC_EXECUTABLE} -o ${RSRC_FILE} ${ARGN} ${COFF_SPEC}
-    )
+        COMMAND ${MRC_EXECUTABLE} -o ${RSRC_FILE} ${ARGN} ${COFF_SPEC})
 
     target_sources(${_target} PRIVATE ${RSRC_FILE})
 endfunction()

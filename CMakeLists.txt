@@ -60,9 +60,7 @@ set(PACKAGE_STRING "${PROJECT_NAME} ${PROJECT_VERSION}")
 
 configure_file(${PROJECT_SOURCE_DIR}/mrc.h.in mrc.h)
 
-install(TARGETS mrc
-	CONFIGURATIONS Release
-	RUNTIME DESTINATION ${BIN_INSTALL_DIR})
+install(TARGETS mrc CONFIGURATIONS Release)
 
 if(WIN32)
 	install(FILES mrc-config.cmake DESTINATION cmake)
