@@ -63,3 +63,9 @@ configure_file(${PROJECT_SOURCE_DIR}/mrc.h.in mrc.h)
 install(TARGETS mrc
 	CONFIGURATIONS Release
 	RUNTIME DESTINATION ${BIN_INSTALL_DIR})
+
+if(WIN32)
+	install(FILES mrc-config.cmake DESTINATION cmake)
+else()
+	install(FILES mrc-config.cmake DESTINATION share/mrc/cmake)
+endif()
