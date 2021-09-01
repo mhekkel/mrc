@@ -15,12 +15,6 @@ if(MSVC)
 	# Windows is always little endian, right?
 	add_compile_definitions(LITTLE_ENDIAN)
 
-	# On Windows, do not install in the system location
-	if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-		message(WARNING "The executable will be installed in $ENV{LOCALAPPDATA}/${PROJECT_NAME}")
-		set(CMAKE_INSTALL_PREFIX "$ENV{LOCALAPPDATA}/${PROJECT_NAME}" CACHE PATH "..." FORCE)
-	endif()
-
 	# Find out the processor type for the target
 	if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "AMD64")
 		set(COFF_TYPE "x64")
@@ -33,14 +27,6 @@ if(MSVC)
 	endif()	
 
 	set(COFF_SPEC "--coff=${COFF_TYPE}")
-endif()
-
-if(UNIX AND NOT APPLE)
-	# On Linux, install in the $HOME/.local folder by default
-	if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-		message(WARNING "The library and auxiliary files will be installed in $ENV{HOME}/.local")
-		set(CMAKE_INSTALL_PREFIX "$ENV{HOME}/.local" CACHE PATH "..." FORCE)
-	endif()
 endif()
 
 find_package(Boost 1.70.0 REQUIRED COMPONENTS program_options)
