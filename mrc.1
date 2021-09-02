@@ -10,6 +10,7 @@ mrc [\fB-o\fR|\fB--output\fR outputfile]
     [\fB--elf-machine\fR arg]
     [\fB--elf-class\fR arg]
     [\fB--elf-data\fR arg]
+    [\fB--elf-abi\fR arg]
     [\fB--elf-flags\fR arg]
     file1 [file2...]
 .sp
@@ -70,6 +71,11 @@ The ELF class to use, should be either \fI1\fR for 32-bit objects or
 \fB--elf-data\fR number
 The ELF data endianness to use, should be either \fI1\fR for little-endian
 (=LSB) objects or \fI2\fR for big-endian (=MSB) objects.
+.TP
+\fB--elf-abi\fR number
+The ELF OS ABI flag to use, the exact value for this flag should be looked
+up in \fIelf.h\fR. Default is to use the value for the current architecture.
+(Value of 3 is for Linux, 9 is for FreeBSD).
 .TP
 \fB--elf-flags\fR number
 A value to store in the \fIe_flags\fR field of the ELF header. This can

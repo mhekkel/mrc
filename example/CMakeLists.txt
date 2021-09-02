@@ -6,6 +6,11 @@ project(mrc-user VERSION 1.0.0 LANGUAGES CXX)
 # Locate the mrc executable and load the mrc_* functions
 find_package(mrc)
 
+# resources depend on C++17 features, like std::filesystem
+set(CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 # Write out an mrsrc.hpp file and make sure the compiler finds it
 mrc_write_header(${CMAKE_CURRENT_BINARY_DIR}/mrsrc.hpp)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})

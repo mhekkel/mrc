@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 # set the project name
-project(mrc VERSION 1.3.2)
+project(mrc VERSION 1.3.3)
 
 enable_testing()
 
@@ -69,3 +69,5 @@ else()
 	install(FILES mrc-config.cmake DESTINATION share/mrc/cmake)
 	install(FILES mrc.1 DESTINATION share/man/man1)
 endif()
+
+install(DIRECTORY example DESTINATION share/doc/mrc/)

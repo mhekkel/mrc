@@ -105,7 +105,7 @@ struct MObjectFileImp
 
 	virtual void Write(std::ofstream &inFile) = 0;
 
-	static MObjectFileImp *Create(int machine, int elf_class, int elf_data, int flags);
+	static MObjectFileImp *Create(int machine, int elf_class, int elf_data, int elf_abi, int flags);
 
   protected:
 	friend class MObjectFile;
@@ -290,14 +290,16 @@ struct MELFObjectFileImp : public MObjectFileImp
 
 	virtual void Write(std::ofstream &inFile) override;
 
-	MELFObjectFileImp(int machine, int flags)
+	MELFObjectFileImp(int machine, uint8_t elf_abi, int flags)
 		: MObjectFileImp()
 		, mMachine(machine)
+		, mABI(elf_abi)
 		, mFlags(flags)
 	{
 	}
 
 	Elf_Half mMachine;
+	uint8_t mABI;
 	Elf_Word mFlags;
 };
 
@@ -331,7 +333,7 @@ void MELFObjectFileImp<ELF_CLASS, ELF_DATA>::Write(std::ofstream &f)
 	Elf_Ehdr eh = {
 		// e_ident
 		{ELFMAG0, ELFMAG1, ELFMAG2, ELFMAG3,
-			ELF_CLASS, ELF_DATA, EV_CURRENT},
+			ELF_CLASS, ELF_DATA, EV_CURRENT, mABI},
 		ET_REL,           // e_type
 		mMachine,         // e_machine
 		EV_CURRENT,       // e_version
@@ -772,18 +774,18 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 // --------------------------------------------------------------------
 
 #if __has_include(<elf.h>)
-MObjectFileImp *MObjectFileImp::Create(int machine, int elf_class, int elf_data, int flags)
+MObjectFileImp *MObjectFileImp::Create(int machine, int elf_class, int elf_data, int elf_abi, int flags)
 {
 	MObjectFileImp *result = nullptr;
 
 	if (elf_class == ELFCLASS32 and elf_data == ELFDATA2LSB)
-		result = new MELFObjectFileImp<ELFCLASS32, ELFDATA2LSB>(machine, flags);
+		result = new MELFObjectFileImp<ELFCLASS32, ELFDATA2LSB>(machine, elf_abi, flags);
 	else if (elf_class == ELFCLASS32 and elf_data == ELFDATA2MSB)
-		result = new MELFObjectFileImp<ELFCLASS32, ELFDATA2MSB>(machine, flags);
+		result = new MELFObjectFileImp<ELFCLASS32, ELFDATA2MSB>(machine, elf_abi, flags);
 	else if (elf_class == ELFCLASS64 and elf_data == ELFDATA2LSB)
-		result = new MELFObjectFileImp<ELFCLASS64, ELFDATA2LSB>(machine, flags);
+		result = new MELFObjectFileImp<ELFCLASS64, ELFDATA2LSB>(machine, elf_abi, flags);
 	else if (elf_class == ELFCLASS64 and elf_data == ELFDATA2MSB)
-		result = new MELFObjectFileImp<ELFCLASS64, ELFDATA2MSB>(machine, flags);
+		result = new MELFObjectFileImp<ELFCLASS64, ELFDATA2MSB>(machine, elf_abi, flags);
 	else
 	{
 		std::cerr << "Unsupported ELF class and/or data" << std::endl;
@@ -800,8 +802,8 @@ class MObjectFile
 {
   public:
 #if __has_include(<elf.h>)
-	MObjectFile(int machine, int elf_class, int elf_data, int flags)
-		: mImpl(MObjectFileImp::Create(machine, elf_class, elf_data, flags))
+	MObjectFile(int machine, int elf_class, int elf_data, int elf_abi, int flags)
+		: mImpl(MObjectFileImp::Create(machine, elf_class, elf_data, elf_abi, flags))
 	{
 	}
 #endif
@@ -1005,6 +1007,7 @@ int main(int argc, char *argv[])
 			( "elf-machine", po::value<int>(),	"The ELF machine type to use, default is same as this machine. Use one of the values from elf.h" )
 			( "elf-class", po::value<int>(),	"ELF class, default is same as this machine. Acceptable values are 1 (32bit) and 2 (64bit)." )
 			( "elf-data", po::value<int>(),		"ELF endianness, default is same as this machine. Acceptable values are 1 (little-endian, LSB) and 2 (big-endian, MSB)." )
+			( "elf-abi", po::value<int>(),		"ELF OS ABI value, see file elf.h for values (linux = 3, freebsd = 9)" )
 			( "elf-flags", po::value<int>(),	"Processor specific flags in the ELF header, e.g. the EABI version for ARM" )
 #endif
 
@@ -1068,7 +1071,13 @@ int main(int argc, char *argv[])
 		// --------------------------------------------------------------------
 		// find out the native format. Simply look at how we were assembled ourselves
 
-		int elf_machine = EM_NONE, elf_class = 0, elf_data = 0, elf_flags = 0;
+		int elf_machine = EM_NONE, elf_class = 0, elf_data = 0, elf_flags = 0, elf_abi = ELFOSABI_NONE;
+
+#if __linux or __linux__
+		elf_abi = ELFOSABI_LINUX;
+#elif __FreeBSD__
+		elf_abi = ELFOSABI_FREEBSD;
+#endif
 
 #if not defined(_MSC_VER)
 		char exePath[PATH_MAX + 1];
@@ -1090,6 +1099,8 @@ int main(int argc, char *argv[])
 
 					elf_class = e_ident[EI_CLASS];
 					elf_data = e_ident[EI_DATA];
+					if (e_ident[EI_ABIVERSION])
+						elf_abi = e_ident[EI_ABIVERSION];
 
 					lseek(fd, 0, SEEK_SET);
 
@@ -1136,42 +1147,60 @@ int main(int argc, char *argv[])
 		if (not file.is_open())
 			throw std::runtime_error("Could not open output file for writing");
 
+		COFF_Machine win_machine = {};
+#if defined(_MSC_VER)
+#if defined(_M_AMD64)
+		machine = IMAGE_FILE_MACHINE_AMD64;
+#elif defined(_M_ARM64)
+		machine = IMAGE_FILE_MACHINE_ARM64;
+#elif defined(_M_IX86)
+		machine = IMAGE_FILE_MACHINE_I386;
+#endif
+#endif
+
 		if (vm.count("coff"))
 		{
-			COFF_Machine machine;
 			if (vm["coff"].as<std::string>() == "x64")
-				machine = IMAGE_FILE_MACHINE_AMD64;
+				win_machine = IMAGE_FILE_MACHINE_AMD64;
 			else if (vm["coff"].as<std::string>() == "arm64")
-				machine = IMAGE_FILE_MACHINE_ARM64;
+				win_machine = IMAGE_FILE_MACHINE_ARM64;
 			else if (vm["coff"].as<std::string>() == "x86")
-				machine = IMAGE_FILE_MACHINE_I386;
+				win_machine = IMAGE_FILE_MACHINE_I386;
 			else
 				throw std::runtime_error("Unsupported machine for COFF: " + vm["coff"].as<std::string>());
+		}
 
-			MObjectFile obj(machine);
+		bool target_elf = vm.count("elf-machine") and vm.count("elf-class") and vm.count("elf-data") and vm.count("elf-flags");
+		if (vm.count("elf-machine"))
+			elf_machine = vm["elf-machine"].as<int>();
+
+		if (vm.count("elf-class"))
+			elf_class = vm["elf-class"].as<int>();
+
+		if (vm.count("elf-data"))
+			elf_data = vm["elf-data"].as<int>();
+
+		if (vm.count("elf-abi"))
+			elf_abi = vm["elf-abi"].as<int>();
+
+		if (vm.count("elf-flags"))
+			elf_flags = vm["elf-flags"].as<int>();
+
+		if (win_machine and not target_elf)
+		{
+			MObjectFile obj(win_machine);
 			rsrcFile.Write(obj);
 			obj.Write(file);
 		}
 #if __has_include(<elf.h>)
 		else
 		{
-			if (vm.count("elf-machine"))
-				elf_machine = vm["elf-machine"].as<int>();
-
-			if (vm.count("elf-class"))
-				elf_class = vm["elf-class"].as<int>();
-
-			if (vm.count("elf-data"))
-				elf_data = vm["elf-data"].as<int>();
-
-			if (vm.count("elf-flags"))
-				elf_flags = vm["elf-flags"].as<int>();
-
-
-			MObjectFile obj(elf_machine, elf_class, elf_data, elf_flags);
+			MObjectFile obj(elf_machine, elf_class, elf_data, elf_abi, elf_flags);
 			rsrcFile.Write(obj);
 			obj.Write(file);
 		}
+#else
+		throw std::runtime_error("Could not create resource file, probably you're trying to create a ELF resource file on Windows?");
 #endif
 	}
 	catch (const std::exception &ex)
