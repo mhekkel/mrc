@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 # set the project name
-project(mrc VERSION 1.3.1)
+project(mrc VERSION 1.3.2)
 
 enable_testing()
 
@@ -60,12 +60,12 @@ set(PACKAGE_STRING "${PROJECT_NAME} ${PROJECT_VERSION}")
 
 configure_file(${PROJECT_SOURCE_DIR}/mrc.h.in mrc.h)
 
-install(TARGETS mrc CONFIGURATIONS Release)
+install(TARGETS mrc)
 
 if(WIN32)
 	install(FILES mrc-config.cmake DESTINATION cmake)
 	install(FILES mrc-manual.pdf DESTINATION doc)
 else()
 	install(FILES mrc-config.cmake DESTINATION share/mrc/cmake)
-	install(FILES mrc-manual.pdf DESTINATION share/doc/mrc)
+	install(FILES mrc.1 DESTINATION share/man/man1)
 endif()
