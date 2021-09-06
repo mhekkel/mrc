@@ -1071,7 +1071,7 @@ int main(int argc, char *argv[])
 		// --------------------------------------------------------------------
 		// find out the native format. Simply look at how we were assembled ourselves
 
-		int elf_machine = EM_NONE, elf_class = 0, elf_data = 0, elf_flags = 0, elf_abi = ELFOSABI_NONE;
+		int elf_machine = EM_NONE, elf_class = 0, elf_data = 0, elf_flags = 0, elf_abi = 0;
 
 #if __linux or __linux__
 		elf_abi = ELFOSABI_LINUX;
@@ -1150,11 +1150,11 @@ int main(int argc, char *argv[])
 		COFF_Machine win_machine = {};
 #if defined(_MSC_VER)
 #if defined(_M_AMD64)
-		machine = IMAGE_FILE_MACHINE_AMD64;
+		win_machine = IMAGE_FILE_MACHINE_AMD64;
 #elif defined(_M_ARM64)
-		machine = IMAGE_FILE_MACHINE_ARM64;
+		win_machine = IMAGE_FILE_MACHINE_ARM64;
 #elif defined(_M_IX86)
-		machine = IMAGE_FILE_MACHINE_I386;
+		win_machine = IMAGE_FILE_MACHINE_I386;
 #endif
 #endif
 
@@ -1192,8 +1192,8 @@ int main(int argc, char *argv[])
 			rsrcFile.Write(obj);
 			obj.Write(file);
 		}
-#if __has_include(<elf.h>)
 		else
+#if __has_include(<elf.h>)
 		{
 			MObjectFile obj(elf_machine, elf_class, elf_data, elf_abi, elf_flags);
 			rsrcFile.Write(obj);
