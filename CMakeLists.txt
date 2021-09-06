@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 # set the project name
-project(mrc VERSION 1.3.3)
+project(mrc VERSION 1.3.4)
 
 enable_testing()
 
