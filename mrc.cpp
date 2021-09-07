@@ -1,7 +1,7 @@
 /*-
  * SPDX-License-Identifier: BSD-2-Clause
  * 
- * Copyright (c) 2017-2020 Maarten L. Hekkelman
+ * Copyright (c) 2017-2021 Maarten L. Hekkelman
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:

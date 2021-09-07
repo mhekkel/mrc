@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: BSD-2-Clause
 
-# Copyright (c) 2020 NKI/AVL, Netherlands Cancer Institute
+# Copyright (c) 2021 Maarten L. Hekkelman
 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
