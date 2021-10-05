@@ -60,7 +60,7 @@ find_package(Boost 1.70.0 REQUIRED COMPONENTS program_options)
 
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
-link_libraries(${Boost_LIBRARIES})
+link_libraries(Boost::program_options std::filesystem)
 
 add_custom_command(OUTPUT mrc-rsrc.obj
 	COMMAND $<TARGET_FILE:mrc-bootstrap> -o mrc-rsrc.obj ${PROJECT_SOURCE_DIR}/mrsrc.h ${COFF_SPEC}
