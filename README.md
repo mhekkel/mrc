@@ -14,7 +14,7 @@ Resources were mildly popular, other OS'es copied the concept in one way or anot
 
 Anyway, I still like being able to provide a single executable to the users of my software. And given the usefulness of resources I decided to create a compiler for them that works with the ELF executable format. Since using resource forks is not an option I decided to store the data in the static data section of an executable. The data is then available through global variables.
 
-New in version 1.4 is support for writing COFF files, so you can now use this type of resources in Windows as well.
+New in version 1.3.4 is support for writing COFF files, so you can now use this type of resources in Windows as well.
 
 ## Synopsis
 
