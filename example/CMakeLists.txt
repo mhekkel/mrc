@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.16)
 project(mrc-user VERSION 1.0.0 LANGUAGES CXX)
 
 # Locate the mrc executable and load the mrc_* functions
-find_package(mrc)
+find_package(Mrc)
 
 # resources depend on C++17 features, like std::filesystem
 set(CXX_EXTENSIONS OFF)
