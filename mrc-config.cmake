@@ -118,7 +118,7 @@ function(mrc_target_resources _target)
 		set(COFF_SPEC "--coff=${COFF_TYPE}")
 	endif()
 
-    add_custom_command(OUTPUT ${RSRC_FILE}
+    add_custom_command(OUTPUT ${RSRC_FILE} ALL
         COMMAND ${MRC_EXECUTABLE} -o ${RSRC_FILE} ${ARGN} ${COFF_SPEC})
 
     target_sources(${_target} PRIVATE ${RSRC_FILE})

@@ -236,7 +236,7 @@ uint32_t WriteDataAligned(std::ofstream &inStream, const void *inData, uint32_t 
 //	Implementation for ELF
 #if __has_include(<elf.h>)
 
-template <int ELF_CLASS>
+template <int ELF_CLASSXXXX>
 struct ElfClass;
 
 template <>
@@ -261,7 +261,7 @@ struct ElfClass<ELFCLASS64>
 	using Elf_Half = Elf64_Half;
 };
 
-template <int ELF_DATA>
+template <int ELF_DATAXX>
 struct ElfData;
 
 template <>
@@ -276,17 +276,17 @@ struct ElfData<ELFDATA2MSB>
 	using swapper = Swap::lsb_swapper;
 };
 
-template <int ELF_CLASS, int ELF_DATA>
+template <int ELF_CLASSXX, int ELF_DATAXX>
 struct MELFObjectFileImp : public MObjectFileImp
 {
-	using swapper = typename ElfData<ELF_DATA>::swapper;
+	using swapper = typename ElfData<ELF_DATAXX>::swapper;
 
-	using Elf_Ehdr = typename ElfClass<ELF_CLASS>::Elf_Ehdr;
-	using Elf_Shdr = typename ElfClass<ELF_CLASS>::Elf_Shdr;
-	using Elf_Sym = typename ElfClass<ELF_CLASS>::Elf_Sym;
+	using Elf_Ehdr = typename ElfClass<ELF_CLASSXX>::Elf_Ehdr;
+	using Elf_Shdr = typename ElfClass<ELF_CLASSXX>::Elf_Shdr;
+	using Elf_Sym = typename ElfClass<ELF_CLASSXX>::Elf_Sym;
 
-	using Elf_Word = typename ElfClass<ELF_CLASS>::Elf_Word;
-	using Elf_Half = typename ElfClass<ELF_CLASS>::Elf_Half;
+	using Elf_Word = typename ElfClass<ELF_CLASSXX>::Elf_Word;
+	using Elf_Half = typename ElfClass<ELF_CLASSXX>::Elf_Half;
 
 	virtual void Write(std::ofstream &inFile) override;
 
@@ -327,13 +327,13 @@ enum
 	kSymbolCount
 };
 
-template <int ELF_CLASS, int ELF_DATA>
-void MELFObjectFileImp<ELF_CLASS, ELF_DATA>::Write(std::ofstream &f)
+template <int ELF_CLASSXX, int ELF_DATAXX>
+void MELFObjectFileImp<ELF_CLASSXX, ELF_DATAXX>::Write(std::ofstream &f)
 {
 	Elf_Ehdr eh = {
 		// e_ident
 		{ELFMAG0, ELFMAG1, ELFMAG2, ELFMAG3,
-			ELF_CLASS, ELF_DATA, EV_CURRENT, mABI},
+			ELF_CLASSXX, ELF_DATAXX, EV_CURRENT, mABI},
 		ET_REL,           // e_type
 		mMachine,         // e_machine
 		EV_CURRENT,       // e_version
@@ -788,7 +788,7 @@ MObjectFileImp *MObjectFileImp::Create(int machine, int elf_class, int elf_data,
 		result = new MELFObjectFileImp<ELFCLASS64, ELFDATA2MSB>(machine, elf_abi, flags);
 	else
 	{
-		std::cerr << "Unsupported ELF class and/or data" << std::endl;
+		std::cerr << "Unsupported ELF class and/or data " << elf_class << ", " << elf_data << std::endl;
 		exit(1);
 	}
 
@@ -1073,16 +1073,18 @@ int main(int argc, char *argv[])
 
 		int elf_machine = EM_NONE, elf_class = 0, elf_data = 0, elf_flags = 0, elf_abi = 0;
 
-#if __linux or __linux__
-		elf_abi = ELFOSABI_LINUX;
-#elif __FreeBSD__
-		elf_abi = ELFOSABI_FREEBSD;
-#endif
-
 #if not defined(_MSC_VER)
+
 		char exePath[PATH_MAX + 1];
 
+#if __linux or __linux__
+		elf_abi = ELFOSABI_LINUX;
 		int r = readlink("/proc/self/exe", exePath, PATH_MAX);
+#elif __FreeBSD__
+		elf_abi = ELFOSABI_FREEBSD;
+		int r = strlen(argv[0]);
+		strcpy(exePath, argv[0]);
+#endif
 		if (r > 0)
 		{
 			exePath[r] = 0;
