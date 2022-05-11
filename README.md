@@ -79,5 +79,6 @@ cd mrc
 mkdir build
 cd build
 cmake ..
-cmake --install
+cmake --build .
+cmake --install .
 ```
