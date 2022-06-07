@@ -25,7 +25,7 @@ cmake_minimum_required(VERSION 3.10)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # set the project name
-project(mrc VERSION 1.3.4)
+project(mrc VERSION 1.3.5)
 
 include(Dart)
 include(FindFilesystem)

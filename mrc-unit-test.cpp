@@ -107,3 +107,24 @@ BOOST_AUTO_TEST_CASE(test_12)
 	BOOST_TEST(line == "Dit is resource 4");
 }
 
+BOOST_AUTO_TEST_CASE(test_13)
+{
+	mrsrc::istream ri("subdir/resource-3.txt");
+
+	BOOST_TEST((bool)ri);
+	BOOST_CHECK_EQUAL(ri.eof(), false);
+
+	std::string line;
+	BOOST_TEST((bool)std::getline(ri, line));
+	BOOST_TEST(line == "Dit is resource 3");
+	BOOST_CHECK_EQUAL(ri.eof(), true);
+}
+
+BOOST_AUTO_TEST_CASE(test_14)
+{
+	mrsrc::istream ri("resource-5.txt");
+
+	BOOST_CHECK_EQUAL((bool)ri, false);
+	BOOST_CHECK_EQUAL(ri.bad(), true);
+}
+

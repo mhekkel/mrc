@@ -1,3 +1,7 @@
+Version 1.3.5
+- Properly set the badbit in case a resources is not found
+  while constructing an istream. Avoids a crash.
+
 Version 1.3.4
 - Fix the Windows version again.
 
