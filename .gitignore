@@ -3,3 +3,4 @@ mrc
 mrc-unit-test
 mrc-bootstrap
 build/
+src/revision.hpp
