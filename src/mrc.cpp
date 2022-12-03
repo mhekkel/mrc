@@ -1,17 +1,17 @@
 /*-
  * SPDX-License-Identifier: BSD-2-Clause
- * 
+ *
  * Copyright (c) 2017-2021 Maarten L. Hekkelman
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -34,8 +34,6 @@
 //
 //	This will create an object file called myrsrs.o containing the data for all file found in the rsrc/ directory.
 
-#include "mrc.h"
-
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -50,15 +48,15 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <boost/program_options.hpp>
+#include <mcfp/mcfp.hpp>
 
 #include "mrsrc.h"
+#include "revision.hpp"
 
 #ifndef PATH_MAX
 #define PATH_MAX 1024
 #endif
 
-namespace po = boost::program_options;
 namespace fs = std::filesystem;
 
 int VERBOSE = 0;
@@ -332,8 +330,8 @@ void MELFObjectFileImp<ELF_CLASSXX, ELF_DATAXX>::Write(std::ofstream &f)
 {
 	Elf_Ehdr eh = {
 		// e_ident
-		{ELFMAG0, ELFMAG1, ELFMAG2, ELFMAG3,
-			ELF_CLASSXX, ELF_DATAXX, EV_CURRENT, mABI},
+		{ ELFMAG0, ELFMAG1, ELFMAG2, ELFMAG3,
+			ELF_CLASSXX, ELF_DATAXX, EV_CURRENT, mABI },
 		ET_REL,           // e_type
 		mMachine,         // e_machine
 		EV_CURRENT,       // e_version
@@ -416,10 +414,10 @@ void MELFObjectFileImp<ELF_CLASSXX, ELF_DATAXX>::Write(std::ofstream &f)
 		},
 		{
 			// kTextSection
-			// sh_name
+		    // sh_name
 			AddNameToNameTable(shstrtab, ".text"),
 			SHT_PROGBITS, // sh_type
-			// sh_flags
+		                  // sh_flags
 			SHF_ALLOC | SHF_EXECINSTR,
 			0,           // sh_addr
 			data_offset, // sh_offset
@@ -431,10 +429,10 @@ void MELFObjectFileImp<ELF_CLASSXX, ELF_DATAXX>::Write(std::ofstream &f)
 		},
 		{
 			// kDataSection
-			// sh_name
+		    // sh_name
 			AddNameToNameTable(shstrtab, ".rsrc_data"),
 			SHT_PROGBITS, // sh_type
-			// sh_flags
+		                  // sh_flags
 			SHF_ALLOC | SHF_WRITE,
 			0,           // sh_addr
 			data_offset, // sh_offset
@@ -446,10 +444,10 @@ void MELFObjectFileImp<ELF_CLASSXX, ELF_DATAXX>::Write(std::ofstream &f)
 		},
 		{
 			// kBssSection
-			// sh_name
+		    // sh_name
 			AddNameToNameTable(shstrtab, ".bss"),
 			SHT_NOBITS, // sh_type
-			// sh_flags
+		                // sh_flags
 			SHF_ALLOC | SHF_WRITE,
 			0,          // sh_addr
 			eh.e_shoff, // sh_offset
@@ -461,7 +459,7 @@ void MELFObjectFileImp<ELF_CLASSXX, ELF_DATAXX>::Write(std::ofstream &f)
 		},
 		{
 			// kShStrtabSection
-			// sh_name
+		    // sh_name
 			AddNameToNameTable(shstrtab, ".shstrtab"),
 			SHT_STRTAB,                    // sh_type
 			0,                             // sh_flags
@@ -475,10 +473,10 @@ void MELFObjectFileImp<ELF_CLASSXX, ELF_DATAXX>::Write(std::ofstream &f)
 		},
 		{
 			// kSymtabSection
-			// sh_name
+		    // sh_name
 			AddNameToNameTable(shstrtab, ".symtab"),
 			SHT_SYMTAB, // sh_type
-			// sh_flags
+		                // sh_flags
 			0,
 			0,              // sh_addr
 			symtab_off,     // sh_offset
@@ -490,10 +488,10 @@ void MELFObjectFileImp<ELF_CLASSXX, ELF_DATAXX>::Write(std::ofstream &f)
 		},
 		{
 			// kStrtabSection
-			// sh_name
+		    // sh_name
 			AddNameToNameTable(shstrtab, ".strtab"),
 			SHT_STRTAB, // sh_type
-			// sh_flags
+		                // sh_flags
 			0,
 			0,                           // sh_addr
 			strtab_off,                  // sh_offset
@@ -634,20 +632,20 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 {
 
 	// Start by allocating a header
-	COFF_Header header =
-		{
-			mMachine, // machine
-			0,        // numberOfSections
-			0,        // timeDateStamp
-			0,        // pointerToSymbolTable
-			0,        // numberOfSymbols
-			0,        // sizeOfOptionalHeader
-			0,        // characteristics
-		};
+	COFF_Header header = {
+		mMachine, // machine
+		0,        // numberOfSections
+		0,        // timeDateStamp
+		0,        // pointerToSymbolTable
+		0,        // numberOfSymbols
+		0,        // sizeOfOptionalHeader
+		0,        // characteristics
+	};
 
 	std::string strtab;
 
-	auto addName = [&strtab](const std::string &name) {
+	auto addName = [&strtab](const std::string &name)
+	{
 		COFF_Name result{};
 		if (name.length() <= 8)
 			name.copy(result.str, name.length());
@@ -658,37 +656,36 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 
 	auto sectionHeaderStart = WriteDataAligned(f, &header, sizeof(header), 1);
 
-	COFF_SectionHeader sectionHeaders[] =
+	COFF_SectionHeader sectionHeaders[] = {
 		{
-			{
-				addName(".rdata"), // name
-				0,                 // virtualSize
-				0,                 // virtualAddress
-				0,                 // sizeOfRawData
-				0,                 // pointerToRawData
-				0,                 // pointerToRelocations
-				0,                 // pointerToLineNumbers
-				0,                 // numberOfRelocations
-				0,                 // numberOfLineNumbers
-				IMAGE_SCN_CNT_INITIALIZED_DATA |
-					IMAGE_SCN_ALIGN_8BYTES |
-					IMAGE_SCN_MEM_READ // characteristics
-			},
-			{
-				addName(".rdata$z"), // name
-				0,                 // virtualSize
-				0,                 // virtualAddress
-				0,                 // sizeOfRawData
-				0,                 // pointerToRawData
-				0,                 // pointerToRelocations
-				0,                 // pointerToLineNumbers
-				0,                 // numberOfRelocations
-				0,                 // numberOfLineNumbers
-				IMAGE_SCN_CNT_INITIALIZED_DATA |
-					IMAGE_SCN_ALIGN_1BYTES |
-					IMAGE_SCN_MEM_READ // characteristics
-			}
-		};
+			addName(".rdata"), // name
+			0,                 // virtualSize
+			0,                 // virtualAddress
+			0,                 // sizeOfRawData
+			0,                 // pointerToRawData
+			0,                 // pointerToRelocations
+			0,                 // pointerToLineNumbers
+			0,                 // numberOfRelocations
+			0,                 // numberOfLineNumbers
+			IMAGE_SCN_CNT_INITIALIZED_DATA |
+				IMAGE_SCN_ALIGN_8BYTES |
+				IMAGE_SCN_MEM_READ // characteristics
+		},
+		{
+			addName(".rdata$z"), // name
+			0,                   // virtualSize
+			0,                   // virtualAddress
+			0,                   // sizeOfRawData
+			0,                   // pointerToRawData
+			0,                   // pointerToRelocations
+			0,                   // pointerToLineNumbers
+			0,                   // numberOfRelocations
+			0,                   // numberOfLineNumbers
+			IMAGE_SCN_CNT_INITIALIZED_DATA |
+				IMAGE_SCN_ALIGN_1BYTES |
+				IMAGE_SCN_MEM_READ // characteristics
+		}
+	};
 
 	std::vector<COFF_Symbol> symbols{};
 
@@ -703,7 +700,7 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 				offset - rawDataOffset,
 				1,
 				0,
-				IMAGE_SYM_CLASS_EXTERNAL});
+				IMAGE_SYM_CLASS_EXTERNAL });
 
 		offset = WriteDataAligned(f, data.data(), data.size());
 	}
@@ -715,7 +712,10 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 	auto rawDataSize = dataSize + padding;
 	auto rawData2Offset = WriteDataAligned(f, std::string('\0', 8).data(), padding);
 
-	offset = WriteDataAligned(f, PACKAGE_STRING, sizeof(PACKAGE_STRING));
+	using namespace std::literals;
+	std::string package_string = kProjectName + " "s + kVersionNumber;
+
+	offset = WriteDataAligned(f, package_string.data(), package_string.length());
 
 	auto rawData2Size = offset - rawData2Offset;
 	auto symbolTableOffset = offset;
@@ -735,7 +735,7 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 			1,
 			0,
 			IMAGE_SYM_CLASS_STATIC,
-			1});
+			1 });
 	COFF_Name n1{};
 	n1._filler_ = dataSize;
 	symbols.emplace_back(COFF_Symbol{ n1 });
@@ -747,12 +747,12 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 			2,
 			0,
 			IMAGE_SYM_CLASS_STATIC,
-			1});
+			1 });
 	COFF_Name n2{};
 	n2._filler_ = dataSize;
 	symbols.emplace_back(COFF_Symbol{ n2 });
 
-	for (auto& sym: symbols)
+	for (auto &sym : symbols)
 		WriteDataAligned(f, &sym, 18);
 
 	uint32_t strTabSize = strtab.size() + 4;
@@ -855,7 +855,7 @@ class MResourceFile
 		mName.push_back(0);
 	}
 
-	void Write(MObjectFile& objFile);
+	void Write(MObjectFile &objFile);
 	void Add(const fs::path &inPath, const fs::path &inFile);
 
   private:
@@ -963,7 +963,7 @@ void MResourceFile::Add(const fs::path &inPath, const fs::path &inFile)
 		std::ifstream f(inFile, std::ios::binary);
 
 		if (not f.is_open())
-			throw std::runtime_error("Could not open data file");
+			throw std::runtime_error("Could not open data file \'" + inFile.string() + '\'');
 
 		std::filebuf *b = f.rdbuf();
 
@@ -979,7 +979,7 @@ void MResourceFile::Add(const fs::path &inPath, const fs::path &inFile)
 	}
 }
 
-void MResourceFile::Write(MObjectFile& obj)
+void MResourceFile::Write(MObjectFile &obj)
 {
 	obj.AddGlobal(mPrefix + "Index", mIndex.data(), mIndex.size() * sizeof(mrsrc::rsrc_imp));
 	obj.AddGlobal(mPrefix + "Data", mData.data(), mData.size());
@@ -990,162 +990,154 @@ void MResourceFile::Write(MObjectFile& obj)
 
 int main(int argc, char *argv[])
 {
-	try
-	{
-		po::options_description visible_options("mrc " PACKAGE_VERSION " options file1 [file2...]");
-		visible_options.add_options()
-			( "help,h",							"Display help message" )
-			( "version",						"Print version" )
-			( "output,o", po::value<std::string>(),
-												"Output file, this file is in the default object file format for this OS." )
-			( "header",							"This will print out the header file you need to include in your program to access your resources" )
-			( "root", po::value<std::string>(), "Root path for the stored data (in the final resource data structure" )
-			( "resource-prefix",
-				po::value<std::string>()->default_value("gResource"),
-												"Prefix for the name of the global variables, default is gResource" )
+	auto &config = mcfp::config::instance();
+
+	config.init(
+		"usage: mrc [options] -o output file1 [file2...]",
+
+		mcfp::make_option("help,h", "Display help message"),
+		mcfp::make_option("version", "Print version"),
+		mcfp::make_option<std::string>("output,o", "Output file, this file is in the default object file format for this OS."),
+		mcfp::make_option("header", "This will print out the header file you need to include in your program to access your resources"),
+		mcfp::make_option<std::string>("root", "Root path for the stored data (in the final resource data structure"),
+		mcfp::make_option<std::string>("resource-prefix", "gResource", "Prefix for the name of the global variables, default is gResource"),
+
 #if __has_include(<elf.h>)
-			( "elf-machine", po::value<int>(),	"The ELF machine type to use, default is same as this machine. Use one of the values from elf.h" )
-			( "elf-class", po::value<int>(),	"ELF class, default is same as this machine. Acceptable values are 1 (32bit) and 2 (64bit)." )
-			( "elf-data", po::value<int>(),		"ELF endianness, default is same as this machine. Acceptable values are 1 (little-endian, LSB) and 2 (big-endian, MSB)." )
-			( "elf-abi", po::value<int>(),		"ELF OS ABI value, see file elf.h for values (linux = 3, freebsd = 9)" )
-			( "elf-flags", po::value<int>(),	"Processor specific flags in the ELF header, e.g. the EABI version for ARM" )
+		mcfp::make_option<int>("elf-machine", "The ELF machine type to use, default is same as this machine. Use one of the values from elf.h"),
+		mcfp::make_option<int>("elf-class", "ELF class, default is same as this machine. Acceptable values are 1 (32bit) and 2 (64bit)."),
+		mcfp::make_option<int>("elf-data", "ELF endianness, default is same as this machine. Acceptable values are 1 (little-endian, LSB) and 2 (big-endian, MSB)."),
+		mcfp::make_option<int>("elf-abi", "ELF OS ABI value, see file elf.h for values (linux = 3, freebsd = 9)"),
+		mcfp::make_option<int>("elf-flags", "Processor specific flags in the ELF header, e.g. the EABI version for ARM"),
 #endif
+		mcfp::make_option<std::string>("coff", "Write a PE/COFF file for Windows, values should be one of x64, x86 or arm64"),
 
-			( "coff", po::value<std::string>(),	"Write a PE/COFF file for Windows, values should be one of x64, x86 or arm64" )
+		mcfp::make_option("verbose,v", "Verbose output")
+	);
 
-			( "verbose,v",						"Verbose output") ;
+	std::error_code ec;
+	config.parse(argc, argv, ec);
+	if (ec)
+	{
+		std::cerr << ec.message() << std::endl;
+		exit(1);
+	}
 
-		po::options_description hidden_options("hidden options");
-		hidden_options.add_options()
-			( "input,i", po::value<std::vector<std::string>>(), "Input files");
+	if (config.has("version"))
+	{
+		write_version_string(std::cout, config.has("verbose"));
+		exit(0);
+	}
 
-		po::options_description cmdline_options;
-		cmdline_options.add(visible_options).add(hidden_options);
+	if (config.has("help") or config.operands().empty() or not config.has("output"))
+	{
+		std::cout << config << std::endl;
+		exit(config.has("help") ? 0 : 1);
+	}
 
-		po::positional_options_description p;
-		p.add("input", -1);
+	if (config.has("header"))
+	{
+		mrsrc::rsrc data("mrsrc.h");
 
-		po::variables_map vm;
-		po::store(po::command_line_parser(argc, argv).options(cmdline_options).positional(p).run(), vm);
-		po::notify(vm);
+		std::string text(data.data(), data.size());
 
-		if (vm.count("version"))
+		if (config.has("output"))
 		{
-			std::cout << PACKAGE_NAME << " version " PACKAGE_VERSION << std::endl;
-			exit(0);
+			std::ofstream file(config.get<std::string>("output"), std::ios::binary);
+			if (not file.is_open())
+				throw std::runtime_error("Could not open output file for writing");
+			file << text << std::endl;
 		}
+		else
+			std::cout << text << std::endl;
 
-		if (vm.count("header"))
-		{
-			mrsrc::rsrc data("mrsrc.h");
+		exit(0);
+	}
 
-			std::string text(data.data(), data.size());
+	VERBOSE = config.count("verbose");
 
-			if (vm.count("output"))
-			{
-				std::ofstream file(vm["output"].as<std::string>(), std::ios::binary);
-				if (not file.is_open())
-					throw std::runtime_error("Could not open output file for writing");
-				file << text << std::endl;
-			}
-			else
-				std::cout << text << std::endl;
+	// --------------------------------------------------------------------
+	// find out the native format. Simply look at how we were assembled ourselves
 
-			exit(0);
-		}
-
-		if (vm.count("help") or vm.count("input") == 0)
-		{
-			std::cerr << visible_options << std::endl
-					  << "See man mrc for more help" << std::endl;
-			exit(vm.count("help") == 0);
-		}
-
-		if (vm.count("verbose"))
-			VERBOSE = 1;
-
-		std::string ns;
-		if (vm.count("root"))
-			ns = vm["root"].as<std::string>();
-
-		// --------------------------------------------------------------------
-		// find out the native format. Simply look at how we were assembled ourselves
-
-		int elf_machine = EM_NONE, elf_class = 0, elf_data = 0, elf_flags = 0, elf_abi = 0;
+	int elf_machine = EM_NONE, elf_class = 0, elf_data = 0, elf_flags = 0, elf_abi = 0;
 
 #if not defined(_MSC_VER)
-
-		char exePath[PATH_MAX + 1];
-
+	char exePath[PATH_MAX + 1];
 #if __linux or __linux__
-		elf_abi = ELFOSABI_LINUX;
-		int r = readlink("/proc/self/exe", exePath, PATH_MAX);
+	elf_abi = ELFOSABI_LINUX;
+	int r = readlink("/proc/self/exe", exePath, PATH_MAX);
 #elif __FreeBSD__
-		elf_abi = ELFOSABI_FREEBSD;
-		int r = strlen(argv[0]);
-		strcpy(exePath, argv[0]);
+	elf_abi = ELFOSABI_FREEBSD;
+	int r = strlen(argv[0]);
+	strcpy(exePath, argv[0]);
 #endif
-		if (r > 0)
+
+	if (r > 0)
+	{
+		exePath[r] = 0;
+
+		int fd = open(exePath, O_RDONLY);
+		if (fd >= 0)
 		{
-			exePath[r] = 0;
+			unsigned char e_ident[16];
 
-			int fd = open(exePath, O_RDONLY);
-			if (fd >= 0)
+			if (read(fd, e_ident, sizeof(e_ident)) == sizeof(e_ident) and
+				e_ident[EI_MAG0] == ELFMAG0 and e_ident[EI_MAG1] == ELFMAG1 and e_ident[EI_MAG2] == ELFMAG2 and e_ident[EI_MAG3] == ELFMAG3)
 			{
-				unsigned char e_ident[16];
+				// Yes, we're an ELF!
 
-				if (read(fd, e_ident, sizeof(e_ident)) == sizeof(e_ident) and
-					e_ident[EI_MAG0] == ELFMAG0 and e_ident[EI_MAG1] == ELFMAG1 and e_ident[EI_MAG2] == ELFMAG2 and e_ident[EI_MAG3] == ELFMAG3)
+				elf_class = e_ident[EI_CLASS];
+				elf_data = e_ident[EI_DATA];
+				if (e_ident[EI_ABIVERSION])
+					elf_abi = e_ident[EI_ABIVERSION];
+
+				lseek(fd, 0, SEEK_SET);
+
+				switch (elf_class)
 				{
-					// Yes, we're an ELF!
-
-					elf_class = e_ident[EI_CLASS];
-					elf_data = e_ident[EI_DATA];
-					if (e_ident[EI_ABIVERSION])
-						elf_abi = e_ident[EI_ABIVERSION];
-
-					lseek(fd, 0, SEEK_SET);
-
-					switch (elf_class)
+					case ELFCLASS32:
 					{
-						case ELFCLASS32:
+						Elf32_Ehdr hdr;
+						if (read(fd, &hdr, sizeof(hdr)) == sizeof(Elf32_Ehdr))
 						{
-							Elf32_Ehdr hdr;
-							if (read(fd, &hdr, sizeof(hdr)) == sizeof(Elf32_Ehdr))
-							{
-								elf_machine = hdr.e_machine;
-								elf_flags = hdr.e_flags;
-							}
-							break;
+							elf_machine = hdr.e_machine;
+							elf_flags = hdr.e_flags;
 						}
-
-						case ELFCLASS64:
-						{
-							Elf64_Ehdr hdr;
-							if (read(fd, &hdr, sizeof(hdr)) == sizeof(Elf64_Ehdr))
-							{
-								elf_machine = hdr.e_machine;
-								elf_flags = hdr.e_flags;
-							}
-							break;
-						}
-
-						default:
-							std::cerr << "Unknown ELF class" << std::endl;
+						break;
 					}
+
+					case ELFCLASS64:
+					{
+						Elf64_Ehdr hdr;
+						if (read(fd, &hdr, sizeof(hdr)) == sizeof(Elf64_Ehdr))
+						{
+							elf_machine = hdr.e_machine;
+							elf_flags = hdr.e_flags;
+						}
+						break;
+					}
+
+					default:
+						std::cerr << "Unknown ELF class" << std::endl;
 				}
 			}
 		}
+	}
 #endif
 
-		std::string prefix = vm["resource-prefix"].as<std::string>();
+	std::string ns;
+	if (config.has("root"))
+		ns = config.get<std::string>("root");
 
+	std::string prefix = config.get<std::string>("resource-prefix");
+
+	try
+	{
 		MResourceFile rsrcFile(prefix);
 
-		for (fs::path i : vm["input"].as<std::vector<std::string>>())
+		for (fs::path i : config.operands())
 			rsrcFile.Add(ns, i);
 
-		std::ofstream file(vm["output"].as<std::string>(), std::ios::binary);
+		std::ofstream file(config.get<std::string>("output"), std::ios::binary);
 		if (not file.is_open())
 			throw std::runtime_error("Could not open output file for writing");
 
@@ -1160,33 +1152,33 @@ int main(int argc, char *argv[])
 #endif
 #endif
 
-		if (vm.count("coff"))
+		if (config.has("coff"))
 		{
-			if (vm["coff"].as<std::string>() == "x64")
+			if (config.get<std::string>("coff") == "x64")
 				win_machine = IMAGE_FILE_MACHINE_AMD64;
-			else if (vm["coff"].as<std::string>() == "arm64")
+			else if (config.get<std::string>("coff") == "arm64")
 				win_machine = IMAGE_FILE_MACHINE_ARM64;
-			else if (vm["coff"].as<std::string>() == "x86")
+			else if (config.get<std::string>("coff") == "x86")
 				win_machine = IMAGE_FILE_MACHINE_I386;
 			else
-				throw std::runtime_error("Unsupported machine for COFF: " + vm["coff"].as<std::string>());
+				throw std::runtime_error("Unsupported machine for COFF: " + config.get<std::string>("coff"));
 		}
 
-		bool target_elf = vm.count("elf-machine") and vm.count("elf-class") and vm.count("elf-data") and vm.count("elf-flags");
-		if (vm.count("elf-machine"))
-			elf_machine = vm["elf-machine"].as<int>();
+		bool target_elf = config.has("elf-machine") and config.has("elf-class") and config.has("elf-data") and config.has("elf-flags");
+		if (config.has("elf-machine"))
+			elf_machine = config.get<int>("elf-machine");
 
-		if (vm.count("elf-class"))
-			elf_class = vm["elf-class"].as<int>();
+		if (config.has("elf-class"))
+			elf_class = config.get<int>("elf-class");
 
-		if (vm.count("elf-data"))
-			elf_data = vm["elf-data"].as<int>();
+		if (config.has("elf-data"))
+			elf_data = config.get<int>("elf-data");
 
-		if (vm.count("elf-abi"))
-			elf_abi = vm["elf-abi"].as<int>();
+		if (config.has("elf-abi"))
+			elf_abi = config.get<int>("elf-abi");
 
-		if (vm.count("elf-flags"))
-			elf_flags = vm["elf-flags"].as<int>();
+		if (config.has("elf-flags"))
+			elf_flags = config.get<int>("elf-flags");
 
 		if (win_machine and not target_elf)
 		{
@@ -1202,7 +1194,7 @@ int main(int argc, char *argv[])
 			obj.Write(file);
 		}
 #else
-		throw std::runtime_error("Could not create resource file, probably you're trying to create a ELF resource file on Windows?");
+			throw std::runtime_error("Could not create resource file, probably you're trying to create a ELF resource file on Windows?");
 #endif
 	}
 	catch (const std::exception &ex)

@@ -4,10 +4,10 @@
 # modification, are permitted provided that the following conditions are met:
 
 # 1. Redistributions of source code must retain the above copyright notice, this
-#    list of conditions and the following disclaimer
+# list of conditions and the following disclaimer
 # 2. Redistributions in binary form must reproduce the above copyright notice,
-#    this list of conditions and the following disclaimer in the documentation
-#    and/or other materials provided with the distribution.
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
 
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -25,7 +25,7 @@ cmake_minimum_required(VERSION 3.10)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # set the project name
-project(mrc VERSION 1.3.5)
+project(mrc VERSION 1.3.6)
 
 include(Dart)
 include(FindFilesystem)
@@ -36,8 +36,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(Filesystem REQUIRED)
 
 if(MSVC)
-    # make msvc standards compliant...
-    add_compile_options(/permissive-)
+	# make msvc standards compliant...
+	add_compile_options(/permissive-)
 
 	# Windows is always little endian, right?
 	add_compile_definitions(LITTLE_ENDIAN)
@@ -51,51 +51,56 @@ if(MSVC)
 		set(COFF_TYPE "arm64")
 	else()
 		message(FATAL_ERROR "Unsupported or unknown processor type ${CMAKE_SYSTEM_PROCESSOR}")
-	endif()	
+	endif()
 
 	set(COFF_SPEC "--coff=${COFF_TYPE}")
 endif()
 
-find_package(Boost 1.70.0 REQUIRED COMPONENTS program_options)
+find_package(libmcfp QUIET)
+if(NOT libmcfp_FOUND)
+	add_subdirectory(libmcfp EXCLUDE_FROM_ALL)
+endif()
 
-include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
-link_libraries(Boost::program_options std::filesystem)
+include(VersionString)
+write_version_header(${PROJECT_SOURCE_DIR}/src/)
 
-add_custom_command(OUTPUT mrc-rsrc.obj
-	COMMAND $<TARGET_FILE:mrc-bootstrap> -o mrc-rsrc.obj ${PROJECT_SOURCE_DIR}/mrsrc.h ${COFF_SPEC}
-	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/mrsrc.h mrc-bootstrap
+add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/mrc-rsrc.obj
+	COMMAND $<TARGET_FILE:mrc-bootstrap> -o ${CMAKE_BINARY_DIR}/mrc-rsrc.obj ${PROJECT_SOURCE_DIR}/src/mrsrc.h ${COFF_SPEC}
+	DEPENDS ${PROJECT_SOURCE_DIR}/src/mrsrc.h mrc-bootstrap
 )
 
-file(GLOB UNIT_TEST_RSRC LIST_DIRECTORIES true ${PROJECT_SOURCE_DIR}/rsrc/*)
+add_executable(mrc ${PROJECT_SOURCE_DIR}/src/mrc.cpp ${CMAKE_BINARY_DIR}/mrc-rsrc.obj)
+add_executable(mrc-bootstrap ${PROJECT_SOURCE_DIR}/src/mrc.cpp ${PROJECT_SOURCE_DIR}/src/dummy.cpp)
 
-add_custom_command(OUTPUT mrc-unit-test-rsrc.obj
-	COMMAND $<TARGET_FILE:mrc-bootstrap> -o mrc-unit-test-rsrc.obj ${UNIT_TEST_RSRC} ${COFF_SPEC}
-	DEPENDS ${UNIT_TEST_RSRC} mrc-bootstrap
-)
+target_link_libraries(mrc std::filesystem libmcfp::libmcfp)
+target_link_libraries(mrc-bootstrap std::filesystem libmcfp::libmcfp)
 
-add_executable(mrc ${PROJECT_SOURCE_DIR}/mrc.cpp mrc-rsrc.obj)
-add_executable(mrc-bootstrap ${PROJECT_SOURCE_DIR}/mrc.cpp ${PROJECT_SOURCE_DIR}/dummy.cpp)
-add_executable(mrc-unit-test ${PROJECT_SOURCE_DIR}/mrc-unit-test.cpp mrc-unit-test-rsrc.obj)
+if(ENABLE_TESTING)
+	enable_testing()
 
-enable_testing()
+	find_package(Boost REQUIRED)
 
-add_test(NAME unit-test COMMAND $<TARGET_FILE:mrc-unit-test> WORKING_DIRECTORY .)
+	file(GLOB UNIT_TEST_RSRC LIST_DIRECTORIES true ${PROJECT_SOURCE_DIR}/rsrc/*)
 
-set(PACKAGE_NAME "${PROJECT_NAME}")
-set(PACKAGE_VERSION "${PROJECT_VERSION}")
-set(PACKAGE_STRING "${PROJECT_NAME} ${PROJECT_VERSION}")
+	add_custom_command(OUTPUT mrc-unit-test-rsrc.obj
+		COMMAND $<TARGET_FILE:mrc-bootstrap> -o mrc-unit-test-rsrc.obj ${UNIT_TEST_RSRC} ${COFF_SPEC}
+		DEPENDS ${UNIT_TEST_RSRC} mrc-bootstrap
+	)
+	
+	add_executable(mrc-unit-test ${PROJECT_SOURCE_DIR}/src/mrc-unit-test.cpp ${CMAKE_BINARY_DIR}/mrc-unit-test-rsrc.obj)
+	target_link_libraries(mrc-unit-test Boost::boost)
 
-configure_file(${PROJECT_SOURCE_DIR}/mrc.h.in mrc.h)
+	add_test(NAME unit-test COMMAND $<TARGET_FILE:mrc-unit-test> WORKING_DIRECTORY .)
+endif()
 
 install(TARGETS mrc)
 
 if(WIN32)
-	install(FILES mrc-config.cmake DESTINATION cmake)
-	install(FILES mrc-manual.pdf DESTINATION doc)
+	install(FILES cmake/mrc-config.cmake DESTINATION cmake)
+	install(FILES doc/mrc-manual.pdf DESTINATION doc)
 else()
-	install(FILES mrc-config.cmake DESTINATION share/mrc/cmake)
-	install(FILES mrc.1 DESTINATION share/man/man1)
+	install(FILES cmake/mrc-config.cmake DESTINATION share/mrc/cmake)
+	install(FILES doc/mrc.1 DESTINATION share/man/man1)
 endif()
 
 install(DIRECTORY example DESTINATION share/doc/mrc/)
