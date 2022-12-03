@@ -1,0 +1,3 @@
+[submodule "libmcfp"]
+	path = libmcfp
+	url = git@github.com:mhekkel/libmcfp.git

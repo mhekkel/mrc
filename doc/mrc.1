@@ -1,4 +1,4 @@
-.TH mrc 1 "2020-09-11" "version 1.2.2" "User Commands"
+.TH mrc 1 "2022-12-03" "version 1.3.6" "User Commands"
 .if n .ad l
 .nh
 .SH NAME
@@ -87,7 +87,8 @@ The argument \fItype\fR should be one of \fBx64\fR, \fBx86\fR or \fBarm64\fR.
 .TP
 \fB--header\fR
 This option will print a \fBmrsrc.h\fR file to \fBstdout\fR which
-you can write to disk and use to access resources.
+you can write to disk and use to access resources. Use with the \fB--output\fR
+option to write to a file instead.
 .TP
 [\fB-v\fR|\fB--verbose\fR]
 Print debug output, useful to track where all data ends up in the
@@ -181,7 +182,8 @@ This class is derived from \fBstd::streambuf\fR. It can take both a
 This class is derived from \fBstd::istream\fR. It can take both a
 \fBmrsrc::rsrc\fR or a path as constructor parameter.
 .SH BUGS
-This application can only generate ELF formatted object files.
+This application can only generate ELF formatted object files on
+machines that have an \fB<elf.h>\fR header file installed.
 .sp
 Only a single resource entry can be generated and there's no
 way to merge or manipulate resource files yet.
