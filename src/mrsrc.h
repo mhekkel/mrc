@@ -276,6 +276,12 @@ class basic_streambuf : public std::basic_streambuf<CharT, Traits>
 		std::swap(m_current, rhs.m_current);
 	}
 
+	/// \brief Analogous to is_open of an ifstream_buffer, return true if the resource is valid
+	bool is_valid() const
+	{
+		return static_cast<bool>(m_rsrc);
+	}
+
   private:
 	void init()
 	{
@@ -397,7 +403,7 @@ class basic_istream : public std::basic_istream<CharT, Traits>
 		: __istream_type(&m_buffer)
 		, m_buffer(resource)
 	{
-		if (resource)	
+		if (resource)
 			this->init(&m_buffer);
 		else
 			__istream_type::setstate(std::ios_base::badbit);
