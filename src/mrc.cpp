@@ -74,7 +74,7 @@ uint32_t AddNameToNameTable(std::string &ioNameTable, const std::string &inName)
 	{
 		if (inName == p)
 		{
-			result = p - ioNameTable.c_str();
+			result = static_cast<uint32_t>(p - ioNameTable.c_str());
 			break;
 		}
 
@@ -83,7 +83,7 @@ uint32_t AddNameToNameTable(std::string &ioNameTable, const std::string &inName)
 
 	if (p >= e)
 	{
-		result = ioNameTable.length();
+		result = static_cast<uint32_t>(ioNameTable.length());
 		ioNameTable.append(inName);
 		ioNameTable.append("\0", 1);
 	}
@@ -226,7 +226,7 @@ uint32_t WriteDataAligned(std::ofstream &inStream, const void *inData, uint32_t 
 			inStream.put('\0');
 	}
 
-	return inStream.tellp();
+	return static_cast<uint32_t>(inStream.tellp());
 }
 
 // --------------------------------------------------------------------
@@ -516,6 +516,8 @@ void MELFObjectFileImp<ELF_CLASSXX, ELF_DATAXX>::Write(std::ofstream &f)
 // --------------------------------------------------------------------
 // PE/COFF
 
+#ifndef IMAGE_FILE_MACHINE_AMD64
+
 enum COFF_Machine : uint16_t
 {
 	IMAGE_FILE_MACHINE_AMD64 = 0x8664,
@@ -529,9 +531,34 @@ enum COFF_HeaderCharacteristics : uint16_t
 	IMAGE_FILE_LINE_NUMS_STRIPPED = 0x0004
 };
 
+enum COFF_SectionHeaderCharacteristics : uint32_t
+{
+	IMAGE_SCN_CNT_CODE = 0x00000020,
+	IMAGE_SCN_LNK_INFO = 0x00000200,
+	IMAGE_SCN_LNK_REMOVE = 0x00000800,
+	IMAGE_SCN_CNT_INITIALIZED_DATA = 0x00000040,
+	IMAGE_SCN_CNT_UNINITIALIZED_DATA = 0x00000080,
+	IMAGE_SCN_ALIGN_1BYTES = 0x00100000,
+	IMAGE_SCN_ALIGN_8BYTES = 0x00400000,
+	IMAGE_SCN_ALIGN_16BYTES = 0x00500000,
+	IMAGE_SCN_MEM_EXECUTE = 0x20000000,
+	IMAGE_SCN_MEM_READ = 0x40000000,
+	IMAGE_SCN_MEM_WRITE = 0x80000000
+};
+
+
+enum COFF_StorageClass : uint8_t
+{
+	IMAGE_SYM_CLASS_EXTERNAL = 0x02,
+	IMAGE_SYM_CLASS_STATIC = 0x03,
+	IMAGE_SYM_CLASS_FILE = 0x67
+};
+
+#endif
+
 struct COFF_Header
 {
-	COFF_Machine machine = IMAGE_FILE_MACHINE_AMD64;
+	uint16_t machine = IMAGE_FILE_MACHINE_AMD64;
 	uint16_t numberOfSections;
 	uint32_t timeDateStamp = 0;
 	uint32_t pointerToSymbolTable;
@@ -552,21 +579,6 @@ union COFF_Name
 
 static_assert(sizeof(COFF_Header) == 20, "COFF_Header size should be 20 bytes");
 
-enum COFF_SectionHeaderCharacteristics : uint32_t
-{
-	IMAGE_SCN_CNT_CODE = 0x00000020,
-	IMAGE_SCN_LNK_INFO = 0x00000200,
-	IMAGE_SCN_LNK_REMOVE = 0x00000800,
-	IMAGE_SCN_CNT_INITIALIZED_DATA = 0x00000040,
-	IMAGE_SCN_CNT_UNINITIALIZED_DATA = 0x00000080,
-	IMAGE_SCN_ALIGN_1BYTES = 0x00100000,
-	IMAGE_SCN_ALIGN_8BYTES = 0x00400000,
-	IMAGE_SCN_ALIGN_16BYTES = 0x00500000,
-	IMAGE_SCN_MEM_EXECUTE = 0x20000000,
-	IMAGE_SCN_MEM_READ = 0x40000000,
-	IMAGE_SCN_MEM_WRITE = 0x80000000
-};
-
 struct COFF_SectionHeader
 {
 	COFF_Name name;
@@ -582,13 +594,6 @@ struct COFF_SectionHeader
 };
 
 static_assert(sizeof(COFF_SectionHeader) == 40, "Section headers should be 40 bytes");
-
-enum COFF_StorageClass : uint8_t
-{
-	IMAGE_SYM_CLASS_EXTERNAL = 0x02,
-	IMAGE_SYM_CLASS_STATIC = 0x03,
-	IMAGE_SYM_CLASS_FILE = 0x67
-};
 
 /// \brief COFF symbol table entry, should be 18 bytes... right...
 struct COFF_Symbol
@@ -619,13 +624,13 @@ struct MCOFFObjectFileImp : public MObjectFileImp
 
 	virtual void Write(std::ofstream &inFile) override;
 
-	MCOFFObjectFileImp(COFF_Machine machine)
+	MCOFFObjectFileImp(uint16_t machine)
 		: MObjectFileImp()
 		, mMachine(machine)
 	{
 	}
 
-	COFF_Machine mMachine;
+	uint16_t mMachine;
 };
 
 void MCOFFObjectFileImp::Write(std::ofstream &f)
@@ -702,7 +707,7 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 				0,
 				IMAGE_SYM_CLASS_EXTERNAL });
 
-		offset = WriteDataAligned(f, data.data(), data.size());
+		offset = WriteDataAligned(f, data.data(), static_cast<uint32_t>(data.size()));
 	}
 
 	auto dataSize = offset - rawDataOffset;
@@ -715,7 +720,7 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 	using namespace std::literals;
 	std::string package_string = kProjectName + " "s + kVersionNumber;
 
-	offset = WriteDataAligned(f, package_string.data(), package_string.length());
+	offset = WriteDataAligned(f, package_string.data(), static_cast<uint32_t>(package_string.length()));
 
 	auto rawData2Size = offset - rawData2Offset;
 	auto symbolTableOffset = offset;
@@ -755,9 +760,9 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 	for (auto &sym : symbols)
 		WriteDataAligned(f, &sym, 18);
 
-	uint32_t strTabSize = strtab.size() + 4;
+	uint32_t strTabSize = static_cast<uint32_t>(strtab.size() + 4);
 	WriteDataAligned(f, &strTabSize, sizeof(strTabSize));
-	WriteDataAligned(f, strtab.data(), strtab.size() + 1);
+	WriteDataAligned(f, strtab.data(), static_cast<uint32_t>(strtab.size() + 1));
 
 	// write section headers
 	f.seekp(sectionHeaderStart);
@@ -767,7 +772,7 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 	f.seekp(0);
 	header.numberOfSections = sizeof(sectionHeaders) / sizeof(COFF_SectionHeader);
 	header.pointerToSymbolTable = symbolTableOffset;
-	header.numberOfSymbols = symbols.size();
+	header.numberOfSymbols = static_cast<uint32_t>(symbols.size());
 	WriteDataAligned(f, &header, sizeof(header));
 }
 
@@ -808,7 +813,7 @@ class MObjectFile
 	}
 #endif
 
-	MObjectFile(COFF_Machine machine)
+	MObjectFile(uint16_t machine)
 		: mImpl(new MCOFFObjectFileImp(machine))
 	{
 	}
@@ -880,13 +885,13 @@ void MResourceFile::AddEntry(fs::path inPath, const char *inData, uint32_t inSiz
 		{
 			mrsrc::rsrc_imp child = {};
 
-			child.m_name = mName.size();
+			child.m_name = static_cast<uint32_t>(mName.size());
 
 			std::string n = p->string();
 			copy(n.begin(), n.end(), std::back_inserter(mName));
 			mName.push_back(0);
 
-			mIndex[node].m_child = mIndex.size();
+			mIndex[node].m_child = static_cast<uint32_t>(mIndex.size());
 			mIndex.push_back(child);
 
 			node = mIndex[node].m_child;
@@ -916,13 +921,13 @@ void MResourceFile::AddEntry(fs::path inPath, const char *inData, uint32_t inSiz
 			// not found, create it
 			mrsrc::rsrc_imp n = {};
 
-			n.m_name = mName.size();
+			n.m_name = static_cast<uint32_t>(mName.size());
 
 			std::string s = p->string();
 			copy(s.begin(), s.end(), back_inserter(mName));
 			mName.push_back(0);
 
-			node = mIndex.size();
+			node = static_cast<uint32_t>(mIndex.size());
 			mIndex[next].m_next = node;
 			mIndex.push_back(n);
 
@@ -934,7 +939,7 @@ void MResourceFile::AddEntry(fs::path inPath, const char *inData, uint32_t inSiz
 	assert(node < mIndex.size());
 
 	mIndex[node].m_size = inSize;
-	mIndex[node].m_data = mData.size();
+	mIndex[node].m_data = static_cast<uint32_t>(mData.size());
 
 	copy(inData, inData + inSize, back_inserter(mData));
 	while ((mData.size() % 8) != 0)
@@ -967,7 +972,7 @@ void MResourceFile::Add(const fs::path &inPath, const fs::path &inFile)
 
 		std::filebuf *b = f.rdbuf();
 
-		uint32_t size = b->pubseekoff(0, std::ios::end, std::ios::in);
+		uint32_t size = static_cast<uint32_t>(b->pubseekoff(0, std::ios::end, std::ios::in));
 		b->pubseekoff(0, std::ios::beg, std::ios::in);
 
 		std::vector<char> text(size);
@@ -981,9 +986,9 @@ void MResourceFile::Add(const fs::path &inPath, const fs::path &inFile)
 
 void MResourceFile::Write(MObjectFile &obj)
 {
-	obj.AddGlobal(mPrefix + "Index", mIndex.data(), mIndex.size() * sizeof(mrsrc::rsrc_imp));
-	obj.AddGlobal(mPrefix + "Data", mData.data(), mData.size());
-	obj.AddGlobal(mPrefix + "Name", mName.data(), mName.size());
+	obj.AddGlobal(mPrefix + "Index", mIndex.data(), static_cast<uint32_t>(mIndex.size() * sizeof(mrsrc::rsrc_imp)));
+	obj.AddGlobal(mPrefix + "Data", mData.data(), static_cast<uint32_t>(mData.size()));
+	obj.AddGlobal(mPrefix + "Name", mName.data(), static_cast<uint32_t>(mName.size()));
 }
 
 // --------------------------------------------------------------------
@@ -1141,7 +1146,7 @@ int main(int argc, char *argv[])
 		if (not file.is_open())
 			throw std::runtime_error("Could not open output file for writing");
 
-		COFF_Machine win_machine = {};
+		uint16_t win_machine = {};
 #if defined(_MSC_VER)
 #if defined(_M_AMD64)
 		win_machine = IMAGE_FILE_MACHINE_AMD64;

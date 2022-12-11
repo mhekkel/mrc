@@ -42,6 +42,9 @@ if(MSVC)
 	# Windows is always little endian, right?
 	add_compile_definitions(LITTLE_ENDIAN)
 
+	# And we certainly don't need those pesky min/max macro's
+	add_compile_definitions(NOMINMAX)
+
 	# Find out the processor type for the target
 	if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "AMD64")
 		set(COFF_TYPE "x64")
