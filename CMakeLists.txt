@@ -59,7 +59,7 @@ if(MSVC)
 	set(COFF_SPEC "--coff=${COFF_TYPE}")
 endif()
 
-find_package(libmcfp QUIET)
+find_package(libmcfp 1.2.4 QUIET)
 if(NOT libmcfp_FOUND)
 	add_subdirectory(libmcfp EXCLUDE_FROM_ALL)
 endif()
