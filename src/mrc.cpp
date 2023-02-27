@@ -962,7 +962,7 @@ void MResourceFile::Add(const fs::path &inPath, const fs::path &inFile)
 	}
 	else
 	{
-		if (VERBOSE)
+		if (VERBOSE > 0)
 			std::cerr << "adding " << inFile << " as " << inPath / inFile.filename() << std::endl;
 
 		std::ifstream f(inFile, std::ios::binary);
@@ -1006,6 +1006,7 @@ int main(int argc, char *argv[])
 		mcfp::make_option("header", "This will print out the header file you need to include in your program to access your resources"),
 		mcfp::make_option<std::string>("root", "Root path for the stored data (in the final resource data structure"),
 		mcfp::make_option<std::string>("resource-prefix", "gResource", "Prefix for the name of the global variables, default is gResource"),
+		mcfp::make_option<std::string>("depends,d", "Print a list of files the resource depends upon to the file specified"),
 
 #if __has_include(<elf.h>)
 		mcfp::make_option<int>("elf-machine", "The ELF machine type to use, default is same as this machine. Use one of the values from elf.h"),
@@ -1059,6 +1060,50 @@ int main(int argc, char *argv[])
 	}
 
 	VERBOSE = config.count("verbose");
+
+	if (config.has("depends"))
+	{
+		std::vector<std::string> files;
+		
+		for (auto p : config.operands())
+		{
+			if (fs::is_directory(p))
+			{
+				for (auto i = fs::recursive_directory_iterator(p); i != fs::recursive_directory_iterator(); ++i)
+					files.emplace_back(i->path().string());
+			}
+			else
+				files.emplace_back(p);
+		}
+
+		std::ofstream depends(config.get("depends"));
+		if (not depends.is_open())
+			throw std::runtime_error("Could not open depends file for output");
+
+		depends << config.get("output") << ": ";
+		for (size_t i = 0; i < files.size(); ++i)
+		{
+			auto &file = files[i];
+			
+			for (char c : { ' ', '$', '#' })
+			{
+				for (auto s = file.find(c); s != std::string::npos; s = file.find(c, s))
+				{
+					file.insert(file.begin() + s, '\\');
+					s += 2;
+				}
+			}
+
+			depends << files[i];
+			if (i + 1 < files.size())
+				depends << " \\\n\t";
+		}
+
+		depends << "\n";
+		depends.close();
+
+		exit(0);
+	}
 
 	// --------------------------------------------------------------------
 	// find out the native format. Simply look at how we were assembled ourselves
@@ -1141,6 +1186,9 @@ int main(int argc, char *argv[])
 
 		for (fs::path i : config.operands())
 			rsrcFile.Add(ns, i);
+
+		if (not config.has("output"))
+			return 0;
 
 		std::ofstream file(config.get<std::string>("output"), std::ios::binary);
 		if (not file.is_open())

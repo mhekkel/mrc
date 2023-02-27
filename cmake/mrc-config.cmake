@@ -67,7 +67,7 @@ find_program(MRC_EXECUTABLE
 if(CMAKE_HOST_WIN32)
     find_program(MRC_EXECUTABLE
         NAMES mrc
-		PATHS $ENV{LOCALAPPDATA}
+        PATHS $ENV{LOCALAPPDATA}
         PATH_SUFFIXES mrc/bin
         DOC "mrc executable"
     )
@@ -88,8 +88,8 @@ unset(mrc_version)
 
 find_package(PackageHandleStandardArgs REQUIRED)
 find_package_handle_standard_args(Mrc
-	REQUIRED_VARS MRC_EXECUTABLE
-	VERSION_VAR MRC_VERSION_STRING)
+    REQUIRED_VARS MRC_EXECUTABLE
+    VERSION_VAR MRC_VERSION_STRING)
 
 #[=======================================================================[.rst:
 .. command:: mrc_target_resources
@@ -102,24 +102,32 @@ find_package_handle_standard_args(Mrc
 function(mrc_target_resources _target)
 
     set(RSRC_FILE "${CMAKE_CURRENT_BINARY_DIR}/${_target}_rsrc.obj")
+    set(RSRC_DEP_FILE "${CMAKE_CURRENT_BINARY_DIR}/${_target}_rsrc.d")
 
-	if(CMAKE_HOST_WIN32)
-		# Find out the processor type for the target
-		if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "AMD64")
-			set(COFF_TYPE "x64")
-		elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "i386")
-			set(COFF_TYPE "x86")
-		elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "ARM64")
-			set(COFF_TYPE "arm64")
-		else()
-			message(FATAL_ERROR "Unsupported or unknown processor type ${CMAKE_SYSTEM_PROCESSOR}")
-		endif()
+    if(CMAKE_HOST_WIN32)
+        # Find out the processor type for the target
+        if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "AMD64")
+            set(COFF_TYPE "x64")
+        elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "i386")
+            set(COFF_TYPE "x86")
+        elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "ARM64")
+            set(COFF_TYPE "arm64")
+        else()
+            message(FATAL_ERROR "Unsupported or unknown processor type ${CMAKE_SYSTEM_PROCESSOR}")
+        endif()
 
-		set(COFF_SPEC "--coff=${COFF_TYPE}")
-	endif()
+        set(COFF_SPEC "--coff=${COFF_TYPE}")
+    endif()
 
-    add_custom_command(OUTPUT ${RSRC_FILE} ALL
-        COMMAND ${MRC_EXECUTABLE} -o ${RSRC_FILE} ${ARGN} ${COFF_SPEC})
+    add_custom_target("mrc-depends-file" ALL
+        BYPRODUCTS ${RSRC_DEP_FILE}
+        COMMAND ${MRC_EXECUTABLE} -o ${RSRC_FILE} -d ${RSRC_DEP_FILE} ${ARGN}
+        VERBATIM)
+
+    add_custom_command(OUTPUT ${RSRC_FILE}
+        DEPFILE ${RSRC_DEP_FILE}
+        COMMAND ${MRC_EXECUTABLE} -o ${RSRC_FILE} ${ARGN} ${COFF_SPEC}
+        VERBATIM)
 
     target_sources(${_target} PRIVATE ${RSRC_FILE})
 endfunction()
