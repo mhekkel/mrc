@@ -119,7 +119,7 @@ function(mrc_target_resources _target)
         set(COFF_SPEC "--coff=${COFF_TYPE}")
     endif()
 
-    add_custom_target("mrc-depends-file" ALL
+    add_custom_target("mrc-depends-file_${_target}" ALL
         BYPRODUCTS ${RSRC_DEP_FILE}
         COMMAND ${MRC_EXECUTABLE} -o ${RSRC_FILE} -d ${RSRC_DEP_FILE} ${ARGN}
         VERBATIM)
