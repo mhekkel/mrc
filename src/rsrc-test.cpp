@@ -12,5 +12,10 @@ int main()
 	else
 		std::cout << "not found" << std::endl;
 	
+	mrsrc::rsrc error_rsrc("invalid");
+	assert(not error_rsrc);
+	assert(error_rsrc.data() == nullptr);
+	assert(error_rsrc.size() == 0);
+
 	return 0;
 }

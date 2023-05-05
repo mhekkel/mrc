@@ -1,3 +1,6 @@
+Version 1.3.8
+- Avoid potential crash on uninitialised resources
+
 Version 1.3.7
 - Added -d/--depends option to write out a depends file
 - Updated the cmake config to use aforementioned depends file

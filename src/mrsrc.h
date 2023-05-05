@@ -1,7 +1,7 @@
 /*-
  * SPDX-License-Identifier: BSD-2-Clause
  *
- * Copyright (c) 2006-2022 Maarten L. Hekkelman
+ * Copyright (c) 2006-2023 Maarten L. Hekkelman
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -114,11 +114,11 @@ class rsrc
 
 	rsrc(std::filesystem::path path);
 
-	std::string name() const { return gResourceName + m_impl->m_name; }
+	std::string name() const { return m_impl ? gResourceName + m_impl->m_name : ""; }
 
-	const char *data() const { return gResourceData + m_impl->m_data; }
+	const char *data() const { return m_impl ? gResourceData + m_impl->m_data : nullptr; }
 
-	unsigned long size() const { return m_impl->m_size; }
+	unsigned long size() const { return m_impl ? m_impl->m_size : 0; }
 
 	explicit operator bool() const { return m_impl != nullptr and m_impl->m_size > 0; }
 
@@ -323,7 +323,7 @@ class basic_streambuf : public std::basic_streambuf<CharT, Traits>
 		return m_end - m_current;
 	}
 
-	pos_type seekoff(off_type off, std::ios_base::seekdir dir, std::ios_base::openmode which)
+	pos_type seekoff(off_type off, std::ios_base::seekdir dir, std::ios_base::openmode /*which*/)
 	{
 		switch (dir)
 		{
@@ -352,7 +352,7 @@ class basic_streambuf : public std::basic_streambuf<CharT, Traits>
 		return m_current - m_begin;
 	}
 
-	pos_type seekpos(pos_type pos, std::ios_base::openmode which)
+	pos_type seekpos(pos_type pos, std::ios_base::openmode /*which*/)
 	{
 		m_current = m_begin + pos;
 
