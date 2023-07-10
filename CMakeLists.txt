@@ -25,7 +25,7 @@ cmake_minimum_required(VERSION 3.10)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # set the project name
-project(mrc VERSION 1.3.8)
+project(mrc VERSION 1.3.9)
 
 include(Dart)
 include(FindFilesystem)
@@ -38,7 +38,9 @@ find_package(Filesystem REQUIRED)
 if(MSVC)
 	# make msvc standards compliant...
 	add_compile_options(/permissive-)
+endif()
 
+if(WIN32)
 	# Windows is always little endian, right?
 	add_compile_definitions(LITTLE_ENDIAN)
 

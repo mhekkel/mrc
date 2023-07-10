@@ -37,14 +37,7 @@ The module defines the following variables:
 
 Additionally, the following commands will be added:
   :command:`mrc_write_header`
-  :command:`mrc_target_resource`
-
-.. versionadded:: 3.14
-  The module defines the following ``IMPORTED`` targets (when
-  :prop_gbl:`CMAKE_ROLE` is ``PROJECT``):
-
-``mrc::mrc``
-  the mrc executable.
+  :command:`mrc_target_resources`
 
 Example usage:
 
@@ -55,7 +48,7 @@ Example usage:
      message("mrc found: ${MRC_EXECUTABLE}")
 
      mrc_write_header(${CMAKE_CURRENT_BINARY_DIR}/mrsrc.hpp)
-     mrc_target_resource(my-app rsrc/hello-world.txt)
+     mrc_target_resources(my-app RESOURCES rsrc/hello-world.txt)
    endif()
 #]=======================================================================]
 
@@ -94,39 +87,97 @@ find_package_handle_standard_args(Mrc
 #[=======================================================================[.rst:
 .. command:: mrc_target_resources
 
-  Add resources to a target. The first argument should be the target name,
-  the rest of the arguments are passed to mrc to pack into a resource 
-  object file.
+  Add resources to a target::
+
+	mrc_target_resources(<target>
+	                     [RSRC_FILE <file>]
+						 [DEPENDS_FILE <file>]
+						 [VERBOSE]
+						 [COFF_TYPE <AMD64|i386|ARM64>]
+						 RESOURCES <file>...
+	                    )
+  
+  This command will specify that resources should be added to 
+  the target ``<target>``.
+  
+  ``RSRC_FILE``
+	Specify the resource file (object file) to create, default is
+	based on ``<target>``.
+
+  ``DEPENDS_FILE``
+	Specify the depends file to create, default is based on ``<target>``.
+
+  ``VERBOSE``
+	Pass the --verbose to mrc so it will print out the list of files
+	added as resource and the path to be used to access them inside the
+	executable.
+
+  ``RESOURCES``
+	The files to pack into the resources of the executable. ``<file>``
+	here can be a file or a directory. Files will be added to the root
+	with their filename. Directories will be added recursively, if the
+	directory name ends with a slash character, the directory part of
+	the name will be stripped.
 #]=======================================================================]
 
 function(mrc_target_resources _target)
 
-    set(RSRC_FILE "${CMAKE_CURRENT_BINARY_DIR}/${_target}_rsrc.obj")
-    set(RSRC_DEP_FILE "${CMAKE_CURRENT_BINARY_DIR}/${_target}_rsrc.d")
+	set(flags VERBOSE)
+	set(options COFF_TYPE RSRC_FILE DEPENDS_FILE)
+	set(sources RESOURCES)
+	cmake_parse_arguments(MRC_OPTION "${flags}" "${options}" "${sources}" ${ARGN})
 
-    if(CMAKE_HOST_WIN32)
-        # Find out the processor type for the target
-        if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "AMD64")
-            set(COFF_TYPE "x64")
-        elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "i386")
-            set(COFF_TYPE "x86")
-        elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "ARM64")
-            set(COFF_TYPE "arm64")
-        else()
-            message(FATAL_ERROR "Unsupported or unknown processor type ${CMAKE_SYSTEM_PROCESSOR}")
-        endif()
+	if(NOT _target)
+		message(FATAL_ERROR "TARGET option is missing")
+	endif()
 
-        set(COFF_SPEC "--coff=${COFF_TYPE}")
-    endif()
+	if(NOT ${MRC_OPTION_RESOURCES})
+		message(FATAL_ERROR "no RESOURCES specified")
+	endif()
 
-    add_custom_target("mrc-depends-file_${_target}" ALL
+	if(MRC_OPTION_RSRC_FILE)
+		set(RSRC_FILE ${MRC_OPTION_RSRC_FILE})
+	else()
+		set(RSRC_FILE "${CMAKE_CURRENT_BINARY_DIR}/${_target}_rsrc.obj")
+	endif()
+
+	if(MRC_OTPION_RSRC_DEP_FILE)
+		set(RSRC_DEP_FILE "${MRC_OPTION_DEPENDS_FILE}")
+	else()
+	    set(RSRC_DEP_FILE "${CMAKE_CURRENT_BINARY_DIR}/${_target}_rsrc.d")
+	endif()
+
+	if(CMAKE_HOST_WIN32)
+		if(MRC_OPTION_COFF_TYPE)
+			set(COFF_SPEC "--coff=${MRC_OPTION_COFF_TYPE}")
+		else()
+			# Find out the processor type for the target
+			if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "AMD64")
+				set(COFF_TYPE "x64")
+			elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "i386")
+				set(COFF_TYPE "x86")
+			elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "ARM64")
+				set(COFF_TYPE "arm64")
+			else()
+				message(FATAL_ERROR "Unsupported or unknown processor type ${CMAKE_SYSTEM_PROCESSOR}")
+			endif()
+
+			set(COFF_SPEC "--coff=${COFF_TYPE}")
+		endif()
+	endif()
+
+	if(${MRC_OPTION_VERBOSE})
+		list(APPEND MRC_OPTION_RESOURCES "--verbose")
+	endif()
+
+	add_custom_target("mrc-depends-file_${_target}" ALL
         BYPRODUCTS ${RSRC_DEP_FILE}
-        COMMAND ${MRC_EXECUTABLE} -o ${RSRC_FILE} -d ${RSRC_DEP_FILE} ${ARGN}
+        COMMAND ${MRC_EXECUTABLE} -o ${RSRC_FILE} -d ${RSRC_DEP_FILE} ${MRC_OPTION_RESOURCES}
         VERBATIM)
 
     add_custom_command(OUTPUT ${RSRC_FILE}
         DEPFILE ${RSRC_DEP_FILE}
-        COMMAND ${MRC_EXECUTABLE} -o ${RSRC_FILE} ${ARGN} ${COFF_SPEC}
+        COMMAND ${MRC_EXECUTABLE} -o ${RSRC_FILE} ${COFF_SPEC} ${MRC_OPTION_RESOURCES}
         VERBATIM)
 
     target_sources(${_target} PRIVATE ${RSRC_FILE})
