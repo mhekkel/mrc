@@ -701,7 +701,7 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 	{
 		symbols.emplace_back(
 			COFF_Symbol{
-				addName(name),
+				addName(mMachine == IMAGE_FILE_MACHINE_I386 ? '_' + name : name),
 				offset - rawDataOffset,
 				1,
 				0,
@@ -1110,7 +1110,7 @@ int main(int argc, char *argv[])
 
 	int elf_machine = EM_NONE, elf_class = 0, elf_data = 0, elf_flags = 0, elf_abi = 0;
 
-#if not defined(_MSC_VER)
+#if not defined(_WIN32)
 	char exePath[PATH_MAX + 1];
 #if __linux or __linux__
 	elf_abi = ELFOSABI_LINUX;
@@ -1195,7 +1195,7 @@ int main(int argc, char *argv[])
 			throw std::runtime_error("Could not open output file for writing");
 
 		uint16_t win_machine = {};
-#if defined(_MSC_VER)
+#if defined(_WIN32)
 #if defined(_M_AMD64)
 		win_machine = IMAGE_FILE_MACHINE_AMD64;
 #elif defined(_M_ARM64)

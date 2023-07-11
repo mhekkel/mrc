@@ -59,6 +59,8 @@ if(WIN32)
 	endif()
 
 	set(COFF_SPEC "--coff=${COFF_TYPE}")
+
+	message(STATUS "Using COFF spec: ${COFF_SPEC}")
 endif()
 
 find_package(libmcfp 1.2.4 QUIET)
