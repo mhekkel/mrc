@@ -20,4 +20,4 @@ add_executable(mrc-user ${CMAKE_CURRENT_SOURCE_DIR}/mrc-user.cpp)
 
 # Add the hello.txt file as a resource, more files and/or directories
 # can be specified here
-mrc_target_resources(mrc-user ${CMAKE_CURRENT_SOURCE_DIR}/hello.txt)
+mrc_target_resources(mrc-user RESOURCES ${CMAKE_CURRENT_SOURCE_DIR}/hello.txt)
