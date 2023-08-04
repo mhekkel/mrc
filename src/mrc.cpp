@@ -1119,6 +1119,8 @@ int main(int argc, char *argv[])
 	elf_abi = ELFOSABI_FREEBSD;
 	int r = strlen(argv[0]);
 	strcpy(exePath, argv[0]);
+#else
+#error "Unsupported OS, sorry..."
 #endif
 
 	if (r > 0)
