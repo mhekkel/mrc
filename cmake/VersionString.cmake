@@ -22,6 +22,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# This cmake extension writes out a revision.hpp file in a specified directory.
+# The file will contain a C++ inline function that can be used to write out
+# version information.
+
 cmake_minimum_required(VERSION 3.15)
 
 # Create a revision file, containing the current git version info, if any
@@ -31,23 +35,42 @@ function(write_version_header dir)
 		message(FATAL_ERROR "First parameter to write_version_header should be a directory where the final revision.hpp file will be placed")
 	endif()
 
-	include(GetGitRevisionDescription)
-	if(NOT(GIT-NOTFOUND OR HEAD-HASH-NOTFOUND))
-		git_describe_working_tree(BUILD_VERSION_STRING --match=build --dirty)
-
-		if(BUILD_VERSION_STRING MATCHES "build-([0-9]+)-g([0-9a-f]+)(-dirty)?")
-			set(BUILD_GIT_TAGREF "${CMAKE_MATCH_2}")
-			if(CMAKE_MATCH_3)
-				set(BUILD_VERSION_STRING "${CMAKE_MATCH_1}*")
-			else()
-				set(BUILD_VERSION_STRING "${CMAKE_MATCH_1}")
-			endif()
-		endif()
-	else()
-		message(WARNING "no git info available, cannot update version string")
+	# Load git package if needed
+	if(NOT GIT_FOUND)
+		find_package(Git QUIET)
 	endif()
 
-	string(TIMESTAMP BUILD_DATE_TIME "%Y-%m-%dT%H:%M:%SZ" UTC)
+	# If git was found, fetch the git description string
+	if(GIT_FOUND)
+		execute_process(
+			COMMAND "${GIT_EXECUTABLE}" describe --dirty --match=build
+			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+			RESULT_VARIABLE res
+			OUTPUT_VARIABLE out
+			ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+		if(res EQUAL 0)
+			set(REVISION_STRING "${out}")
+		endif()
+	endif()
+
+	# Check the revision string, if it matches we fill in the required info
+	if(REVISION_STRING MATCHES "build-([0-9]+)-g([0-9a-f]+)(-dirty)?")
+		set(REVISION_GIT_TAGREF "${CMAKE_MATCH_2}")
+		if(CMAKE_MATCH_3)
+			set(REVISION_STRING "${CMAKE_MATCH_1}*")
+		else()
+			set(REVISION_STRING "${CMAKE_MATCH_1}")
+		endif()
+
+		string(TIMESTAMP REVISION_DATE_TIME "%Y-%m-%dT%H:%M:%SZ" UTC)
+	else()
+		message(STATUS "no git info available, cannot update version string")
+
+		set(REVISION_GIT_TAGREF "")
+		set(REVISION_STRING "")
+		set(REVISION_DATE_TIME "")
+	endif()
 
 	if(ARGC GREATER 1)
 		set(VAR_PREFIX "${ARGV1}")
@@ -61,18 +84,23 @@ function(write_version_header dir)
 
 const char k@VAR_PREFIX@ProjectName[] = "@PROJECT_NAME@";
 const char k@VAR_PREFIX@VersionNumber[] = "@PROJECT_VERSION@";
-const char k@VAR_PREFIX@VersionGitTag[] = "@BUILD_GIT_TAGREF@";
-const char k@VAR_PREFIX@BuildInfo[] = "@BUILD_VERSION_STRING@";
-const char k@VAR_PREFIX@BuildDate[] = "@BUILD_DATE_TIME@";
+const char k@VAR_PREFIX@RevisionGitTag[] = "@REVISION_GIT_TAGREF@";
+const char k@VAR_PREFIX@RevisionInfo[] = "@REVISION_STRING@";
+const char k@VAR_PREFIX@RevisionDate[] = "@REVISION_DATE_TIME@";
 
 inline void write_version_string(std::ostream &os, bool verbose)
 {
 	os << k@VAR_PREFIX@ProjectName << " version " << k@VAR_PREFIX@VersionNumber << std::endl;
 	if (verbose)
 	{
-		os << "build: " << k@VAR_PREFIX@BuildInfo << ' ' << k@VAR_PREFIX@BuildDate << std::endl;
-		if (k@VAR_PREFIX@VersionGitTag[0] != 0)
-			os << "git tag: " << k@VAR_PREFIX@VersionGitTag << std::endl;
+		if (k@VAR_PREFIX@RevisionInfo[0] != 0)
+		{
+			os << "build: " << k@VAR_PREFIX@RevisionInfo << ' ' << k@VAR_PREFIX@RevisionDate << std::endl;
+			if (k@VAR_PREFIX@RevisionGitTag[0] != 0)
+				os << "git tag: " << k@VAR_PREFIX@RevisionGitTag << std::endl;
+		}
+		else
+			os << "No revision information available" << std::endl;
 	}
 }
 ]])
