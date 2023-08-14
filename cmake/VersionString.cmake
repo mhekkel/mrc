@@ -239,11 +239,11 @@ function(write_version_header dir)
 
 	# Check the revision string, if it matches we fill in the required info
 	if(REVISION_STRING MATCHES "build-([0-9]+)-g([0-9a-f]+)(-dirty)?")
-		set(REVISION_GIT_TAGREF "${CMAKE_MATCH_2}")
+		set(BUILD_NUMBER ${CMAKE_MATCH_1})
 		if(CMAKE_MATCH_3)
-			set(REVISION_STRING "${CMAKE_MATCH_1}*")
+			set(REVISION_GIT_TAGREF "${CMAKE_MATCH_2}*")
 		else()
-			set(REVISION_STRING "${CMAKE_MATCH_1}")
+			set(REVISION_GIT_TAGREF "${CMAKE_MATCH_2}")
 		endif()
 
 		string(TIMESTAMP REVISION_DATE_TIME "%Y-%m-%dT%H:%M:%SZ" UTC)
@@ -251,7 +251,7 @@ function(write_version_header dir)
 		message(STATUS "no git info available, cannot update version string")
 
 		set(REVISION_GIT_TAGREF "")
-		set(REVISION_STRING "")
+		set(BUILD_NUMBER 0)
 		set(REVISION_DATE_TIME "")
 	endif()
 
@@ -259,34 +259,123 @@ function(write_version_header dir)
 		set(VAR_PREFIX "${VERSION_STRING_OPTION_VAR_PREFIX}")
 	endif()
 
-	file(WRITE "${VERSION_STRING_DATA}/${file_name}.in" [[// Generated revision file
+	file(WRITE "${VERSION_STRING_DATA}/${file_name}.in" [[
+
+
+// Generated revision file
 
 #pragma once
 
 #include <ostream>
 
-const char k@VAR_PREFIX@ProjectName[] = "@PROJECT_NAME@";
-const char k@VAR_PREFIX@VersionNumber[] = "@PROJECT_VERSION@";
-const char k@VAR_PREFIX@RevisionGitTag[] = "@REVISION_GIT_TAGREF@";
-const char k@VAR_PREFIX@RevisionInfo[] = "@REVISION_STRING@";
-const char k@VAR_PREFIX@RevisionDate[] = "@REVISION_DATE_TIME@";
+constexpr const char k@VAR_PREFIX@ProjectName[] = "@PROJECT_NAME@";
+constexpr const char k@VAR_PREFIX@VersionNumber[] = "@PROJECT_VERSION@";
+constexpr const char k@VAR_PREFIX@RevisionGitTag[] = "@REVISION_GIT_TAGREF@";
+constexpr int k@VAR_PREFIX@BuildNumber = @BUILD_NUMBER@;
+constexpr const char k@VAR_PREFIX@RevisionDate[] = "@REVISION_DATE_TIME@";
+
+#ifndef VERSION_INFO_DEFINED
+#define VERSION_INFO_DEFINED 1
+
+#define CONCAT(a, b, c)  a_ ## b ## c
+#define CREATE_INSTANCE_NAME(prefix) CONCAT(k, prefix, instance)
+#define CREATE_CLASS_NAME(prefix) CONCAT(version_info_, prefix, impl)
+
+class version_info_base
+{
+	public:
+	virtual ~version_info_base() = default;
+
+	static void write(std::ostream &os, bool verbose)
+	{
+		for (auto inst = head(); inst != nullptr; inst = inst->m_next)
+		{
+			os << inst->m_name << " version " << inst->m_version << std::endl;
+
+			if (verbose)
+			{
+				if (inst->m_build != 0)
+				{
+					os << "build: " << inst->m_build << ' ' << inst->m_revision_date << std::endl;
+					if (inst->m_git_tag[0] != 0)
+						os << "git tag: " << inst->m_git_tag << std::endl;
+				}
+				else
+					os << "No revision information available" << std::endl;
+			}
+
+			if (inst->m_next != nullptr)
+				os << std::endl;
+		}
+	}
+
+	protected:
+
+	struct instance
+	{
+		const char *m_name;
+		const char *m_version;
+		const char *m_git_tag;
+		int m_build;
+		const char *m_revision_date;
+
+		instance *m_next = nullptr;
+	};
+
+	using instance_ptr = instance *;
+
+	static instance_ptr &head()
+	{
+		static instance_ptr s_head = nullptr;
+		return s_head;
+	}
+};
+
+template<typename T>
+class version_info : public version_info_base
+{
+	public:
+
+	using implementation_type = T;
+
+	protected:
+	version_info()
+	{
+		auto &s_head = head();
+		static instance s_next{
+			implementation_type::name(),
+			implementation_type::version(),
+			implementation_type::git_tag(),
+			implementation_type::build_number(),
+			implementation_type::revision_date(),
+			s_head };
+		s_head = &s_next;
+	}
+};
 
 inline void write_version_string(std::ostream &os, bool verbose)
 {
-	os << k@VAR_PREFIX@ProjectName << " version " << k@VAR_PREFIX@VersionNumber << std::endl;
-	if (verbose)
-	{
-		if (k@VAR_PREFIX@RevisionInfo[0] != 0)
-		{
-			os << "build: " << k@VAR_PREFIX@RevisionInfo << ' ' << k@VAR_PREFIX@RevisionDate << std::endl;
-			if (k@VAR_PREFIX@RevisionGitTag[0] != 0)
-				os << "git tag: " << k@VAR_PREFIX@RevisionGitTag << std::endl;
-		}
-		else
-			os << "No revision information available" << std::endl;
-	}
+	version_info_base::write(os, verbose);
 }
-]])
+
+#endif
+
+#define INSTANCE_NAME CREATE_INSTANCE_NAME(VAR_PREFIX)
+#define CLASS_NAME CREATE_CLASS_NAME(VAR_PREFIX)
+
+class CLASS_NAME : public version_info<CLASS_NAME>
+{
+	public:
+
+	static constexpr const char *name() { return k@VAR_PREFIX@ProjectName; }
+	static constexpr const char *version() { return k@VAR_PREFIX@VersionNumber; }
+	static constexpr const char *git_tag() { return k@VAR_PREFIX@RevisionGitTag; }
+	static constexpr int build_number() { return k@VAR_PREFIX@BuildNumber; }
+	static constexpr const char *revision_date() { return k@VAR_PREFIX@RevisionDate; }
+} INSTANCE_NAME;
+
+	
+	]])
 	configure_file("${VERSION_STRING_DATA}/${file_name}.in" "${dir}/${file_name}" @ONLY)
 endfunction()
 
