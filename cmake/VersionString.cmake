@@ -31,6 +31,28 @@ cmake_minimum_required(VERSION 3.15)
 # We want the revision.hpp file to be updated whenever the status of the
 # git repository changes. Use the same technique as in GetGitRevisionDescription.cmake
 
+
+#[=======================================================================[.rst:
+.. command:: write_version_header
+
+  Write a file named revision.hpp containing version info::
+
+	write_version_header(<destdir>
+	                     [FILE_NAME <file-name>]
+						 [VAR_PREFIX <prefix>]
+	                    )
+  
+  This command will generate the code to write a file name
+  revision.hpp in the directory ``<destdir>``.
+  
+  ``FILE_NAME``
+	Specify the name of the file to create, default is ``revision.hpp``.
+
+  ``VAR_PREFIX``
+	Specify a prefix part for the variables contained in the revision
+	file.
+#]=======================================================================]
+
 # First locate a .git file or directory.
 function(_get_git_dir _start_dir _variable)
 
@@ -59,7 +81,7 @@ endfunction()
 # This code locates the file containing the git refspec/hash
 # and loads it. Doing it this way assures that each time the git
 # repository changes the revision.hpp file gets out of date.
-function(_get_git_hash _variable)
+function(_get_git_hash _data_dir _variable)
 
 	# Be pessimistic
 	set(_variable "" PARENT_SCOPE)
@@ -128,19 +150,13 @@ function(_get_git_hash _variable)
         return()
     endif()
 
-	# Our corner in the build area
-	set(GIT_DATA "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/git-data")
-	if(NOT EXISTS "${GIT_DATA}")
-        file(MAKE_DIRECTORY "${GIT_DATA}")
-    endif()
-
 	# Make a copy of the head file
-    set(HEAD_FILE "${GIT_DATA}/HEAD")
+    set(HEAD_FILE "${_data_dir}/HEAD")
     configure_file("${HEAD_SOURCE_FILE}" "${HEAD_FILE}" COPYONLY)
 
 	# Now we create a cmake file that will read the contents of this
 	# head file in the appropriate way
-	file(WRITE "${GIT_DATA}/grab-ref.cmake.in" [[
+	file(WRITE "${_data_dir}/grab-ref.cmake.in" [[
 set(HEAD_HASH)
 
 file(READ "@HEAD_FILE@" HEAD_CONTENTS LIMIT 1024)
@@ -150,31 +166,31 @@ if(HEAD_CONTENTS MATCHES "ref")
 	# named branch
 	string(REPLACE "ref: " "" HEAD_REF "${HEAD_CONTENTS}")
 	if(EXISTS "@GIT_DIR@/${HEAD_REF}")
-		configure_file("@GIT_DIR@/${HEAD_REF}" "@GIT_DATA@/head-ref" COPYONLY)
+		configure_file("@GIT_DIR@/${HEAD_REF}" "@VERSION_STRING_DATA@/head-ref" COPYONLY)
 	else()
-		configure_file("@GIT_DIR@/packed-refs" "@GIT_DATA@/packed-refs" COPYONLY)
-		file(READ "@GIT_DATA@/packed-refs" PACKED_REFS)
+		configure_file("@GIT_DIR@/packed-refs" "@VERSION_STRING_DATA@/packed-refs" COPYONLY)
+		file(READ "@VERSION_STRING_DATA@/packed-refs" PACKED_REFS)
 		if(${PACKED_REFS} MATCHES "([0-9a-z]*) ${HEAD_REF}")
 			set(HEAD_HASH "${CMAKE_MATCH_1}")
 		endif()
 	endif()
 else()
 	# detached HEAD
-	configure_file("@GIT_DIR@/HEAD" "@GIT_DATA@/head-ref" COPYONLY)
+	configure_file("@GIT_DIR@/HEAD" "@VERSION_STRING_DATA@/head-ref" COPYONLY)
 endif()
 
 if(NOT HEAD_HASH)
-	file(READ "@GIT_DATA@/head-ref" HEAD_HASH LIMIT 1024)
+	file(READ "@VERSION_STRING_DATA@/head-ref" HEAD_HASH LIMIT 1024)
 	string(STRIP "${HEAD_HASH}" HEAD_HASH)
 endif()
 ]])
 
-    configure_file("${GIT_DATA}/grab-ref.cmake.in"
-                   "${GIT_DATA}/grab-ref.cmake" @ONLY)
+    configure_file("${VERSION_STRING_DATA}/grab-ref.cmake.in"
+                   "${VERSION_STRING_DATA}/grab-ref.cmake" @ONLY)
     
 	# Include the aforementioned file, this will define
 	# the HEAD_HASH variable we're looking for
-	include("${GIT_DATA}/grab-ref.cmake")
+	include("${VERSION_STRING_DATA}/grab-ref.cmake")
 
     set(${_variable} "${HEAD_HASH}" PARENT_SCOPE)
 endfunction()
@@ -183,7 +199,7 @@ endfunction()
 function(write_version_header dir)
 
 	set(flags )
-	set(options VAR_PREFIX)
+	set(options VAR_PREFIX FILE_NAME)
 	set(sources )
 	cmake_parse_arguments(VERSION_STRING_OPTION "${flags}" "${options}" "${sources}" ${ARGN})
 
@@ -192,8 +208,20 @@ function(write_version_header dir)
 		message(FATAL_ERROR "First parameter to write_version_header should be a directory where the final revision.hpp file will be placed")
 	endif()
 
+	if(VERSION_STRING_OPTION_FILE_NAME)
+		set(file_name "${VERSION_STRING_OPTION_FILE_NAME}")
+	else()
+		set(file_name "revision.hpp")
+	endif()
+
+	# Where to store intermediate files
+	set(VERSION_STRING_DATA "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/VersionString")
+	if(NOT EXISTS "${VERSION_STRING_DATA}")
+        file(MAKE_DIRECTORY "${VERSION_STRING_DATA}")
+    endif()
+
 	# Load the git hash using the wizzard-like code above.
-	_get_git_hash(GIT_HASH)
+	_get_git_hash("${VERSION_STRING_DATA}" GIT_HASH)
 
 	# If git was found, fetch the git description string
 	if(GIT_HASH)
@@ -227,11 +255,11 @@ function(write_version_header dir)
 		set(REVISION_DATE_TIME "")
 	endif()
 
-	if(MRC_OPTION_VAR_PREFIX)
-		set(VAR_PREFIX "${MRC_OPTION_VAR_PREFIX}")
+	if(VERSION_STRING_OPTION_VAR_PREFIX)
+		set(VAR_PREFIX "${VERSION_STRING_OPTION_VAR_PREFIX}")
 	endif()
 
-	file(WRITE "${PROJECT_BINARY_DIR}/revision.hpp.in" [[// Generated revision file
+	file(WRITE "${VERSION_STRING_DATA}/${file_name}.in" [[// Generated revision file
 
 #pragma once
 
@@ -259,6 +287,6 @@ inline void write_version_string(std::ostream &os, bool verbose)
 	}
 }
 ]])
-	configure_file("${PROJECT_BINARY_DIR}/revision.hpp.in" "${dir}/revision.hpp" @ONLY)
+	configure_file("${VERSION_STRING_DATA}/${file_name}.in" "${dir}/${file_name}" @ONLY)
 endfunction()
 
