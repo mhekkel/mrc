@@ -65,7 +65,11 @@ endif()
 
 find_package(libmcfp 1.2.4 QUIET)
 if(NOT libmcfp_FOUND)
-	add_subdirectory(libmcfp EXCLUDE_FROM_ALL)
+	if (EXISTS "libmcfp/CMakeLists.txt")
+		add_subdirectory(libmcfp EXCLUDE_FROM_ALL)
+	else()
+		message(FATAL_ERROR "Could not locate libmcfp version 1.2.4, please install manually")
+	endif()
 endif()
 
 include(VersionString)
