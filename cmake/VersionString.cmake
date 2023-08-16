@@ -278,38 +278,43 @@ constexpr const char k@VAR_PREFIX@RevisionDate[] = "@REVISION_DATE_TIME@";
 #ifndef VERSION_INFO_DEFINED
 #define VERSION_INFO_DEFINED 1
 
+namespace version_info_v1
+{
+
 class version_info_base
 {
   public:
-	virtual ~version_info_base() = default;
 
 	static void write(std::ostream &os, bool verbose)
 	{
-		auto s_head = head();
+		auto &s_head = head();
 		if (s_head != nullptr)
 			write(s_head, os, verbose);
 	}
 
   protected:
 
-	struct instance
+	version_info_base(const char *name, const char *version, int build_number, const char *git_tag, const char *revision_date)
+		: m_name(name)
+		, m_version(version)
+		, m_build_number(build_number)
+		, m_git_tag(git_tag)
+		, m_revision_date(revision_date)
 	{
-		const char *m_name;
-		const char *m_version;
-		int m_build;
-		const char *m_git_tag;
-		const char *m_revision_date;
+		auto &s_head = head();
+		m_next = s_head;
+		s_head = this;
+	}
 
-		instance *m_next = nullptr;
-	};
-
-	static void write(const instance *inst, std::ostream &os, bool verbose)
+	static void write(const version_info_base *inst, std::ostream &os, bool verbose)
 	{
-		if (inst->m_next != nullptr)
+		if (inst->m_next)
 		{
 			write(inst->m_next, os, verbose);
+
 			if (not verbose)
 				return;
+			
 			os << '-' << std::endl;
 		}
 
@@ -317,24 +322,29 @@ class version_info_base
 
 		if (verbose)
 		{
-			if (inst->m_build != 0)
+			if (inst->m_build_number != 0)
 			{
-				os << "build: " << inst->m_build << ' ' << inst->m_revision_date << std::endl;
+				os << "build: " << inst->m_build_number << ' ' << inst->m_revision_date << std::endl;
 				if (inst->m_git_tag[0] != 0)
 					os << "git tag: " << inst->m_git_tag << std::endl;
 			}
-			else
-				os << "No revision information available" << std::endl;
 		}
 	}
 
-	using instance_ptr = instance *;
+	using version_info_ptr = version_info_base *;
 
-	static instance_ptr &head()
+	static version_info_ptr &head()
 	{
-		static instance_ptr s_head = nullptr;
+		static version_info_ptr s_head = nullptr;
 		return s_head;
 	}
+
+	const char *m_name;
+	const char *m_version;
+	int m_build_number;
+	const char *m_git_tag;
+	const char *m_revision_date;
+	version_info_base *m_next = nullptr;
 };
 
 template<typename T>
@@ -343,45 +353,43 @@ class version_info : public version_info_base
   public:
 	using implementation_type = T;
 
+	version_info(const char *name, const char *version, int build_number, const char *git_tag, const char *revision_date)
+		: version_info_base(name, version, build_number, git_tag, revision_date)
+	{
+	}
+
 	struct register_object
 	{
 		register_object()
 		{
-			auto &s_head = version_info_base::head();
-			static instance s_next{
-				implementation_type::name(),
-				implementation_type::version(),
-				implementation_type::build_number(),
-				implementation_type::git_tag(),
-				implementation_type::revision_date(),
-				s_head };
-			s_head = &s_next;
+			static implementation_type s_instance;
 		}
 	};
 
-	template<register_object&> struct referrence_object;
+	template<register_object&> struct reference_object;
 
 	static register_object s_registered_object;
-	static referrence_object<s_registered_object> s_referrenced_object;
+	static reference_object<s_registered_object> s_referenced_object;
 };
 
 template<typename T> typename version_info<T>::register_object version_info<T>::s_registered_object;
 
+}
+
 inline void write_version_string(std::ostream &os, bool verbose)
 {
-	version_info_base::write(os, verbose);
+	version_info_v1::version_info_base::write(os, verbose);
 }
 
 #endif
 
-class version_info_@IDENT_PREFIX@impl : public version_info<version_info_@IDENT_PREFIX@impl>
+class version_info_@IDENT_PREFIX@impl : public version_info_v1::version_info<version_info_@IDENT_PREFIX@impl>
 {
   public:
-	static constexpr const char *name() { return k@VAR_PREFIX@ProjectName; }
-	static constexpr const char *version() { return k@VAR_PREFIX@VersionNumber; }
-	static constexpr int build_number() { return k@VAR_PREFIX@BuildNumber; }
-	static constexpr const char *git_tag() { return k@VAR_PREFIX@RevisionGitTag; }
-	static constexpr const char *revision_date() { return k@VAR_PREFIX@RevisionDate; }
+	version_info_@IDENT_PREFIX@impl()
+		: version_info(k@VAR_PREFIX@ProjectName, k@VAR_PREFIX@VersionNumber, k@VAR_PREFIX@BuildNumber, k@VAR_PREFIX@RevisionGitTag, k@VAR_PREFIX@RevisionDate)
+	{
+	}
 };
 ]])
 	configure_file("${VERSION_STRING_DATA}/${file_name}.in" "${dir}/${file_name}" @ONLY)
