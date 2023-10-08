@@ -25,9 +25,8 @@ cmake_minimum_required(VERSION 3.10)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # set the project name
-project(mrc VERSION 1.3.10)
+project(mrc VERSION 1.3.11)
 
-include(Dart)
 include(FindFilesystem)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -65,7 +64,11 @@ endif()
 
 find_package(libmcfp 1.2.4 QUIET)
 if(NOT libmcfp_FOUND)
-	add_subdirectory(libmcfp EXCLUDE_FROM_ALL)
+	if (EXISTS "libmcfp/CMakeLists.txt")
+		add_subdirectory(libmcfp EXCLUDE_FROM_ALL)
+	else()
+		message(FATAL_ERROR "Could not locate libmcfp version 1.2.4, please install manually")
+	endif()
 endif()
 
 include(VersionString)

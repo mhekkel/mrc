@@ -190,7 +190,6 @@ function(mrc_target_resources _target)
 		message(STATUS "Not using dependency file since cmake version is too old")
 
 		add_custom_command(OUTPUT ${RSRC_FILE}
-			DEPFILE ${RSRC_DEP_FILE}
 			COMMAND ${MRC_EXECUTABLE} -o ${RSRC_FILE} ${COFF_SPEC} ${MRC_OPTION_RESOURCES}
 			VERBATIM)
 
