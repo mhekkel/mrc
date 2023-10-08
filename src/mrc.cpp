@@ -310,6 +310,7 @@ enum
 	kShStrtabSection,
 	kSymtabSection,
 	kStrtabSection,
+	kNoteGNU_stack,
 
 	kSectionCount
 };
@@ -405,6 +406,7 @@ void MELFObjectFileImp<ELF_CLASSXX, ELF_DATAXX>::Write(std::ofstream &f)
 	(void)AddNameToNameTable(shstrtab, ".shstrtab");
 	(void)AddNameToNameTable(shstrtab, ".symtab");
 	(void)AddNameToNameTable(shstrtab, ".strtab");
+	(void)AddNameToNameTable(shstrtab, ".note.GNU-stack");
 
 	eh.e_shoff = WriteDataAligned(f, shstrtab.c_str(), shstrtab.length(), 16);
 
@@ -501,6 +503,21 @@ void MELFObjectFileImp<ELF_CLASSXX, ELF_DATAXX>::Write(std::ofstream &f)
 			1,                           // sh_addralign
 			0                            // sh_entsize
 		},
+		{
+			// kStrtabSection
+		    // sh_name
+			AddNameToNameTable(shstrtab, ".note.GNU-stack"),
+			SHT_STRTAB, // sh_type
+		                // sh_flags
+			0,
+			0, // sh_addr
+			0, // sh_offset
+			0, // sh_size
+			0, // sh_link
+			0, // sh_info
+			1, // sh_addralign
+			0  // sh_entsize
+		},
 	};
 
 	WriteDataAligned(f, sh, sizeof(sh), 1);
@@ -545,7 +562,6 @@ enum COFF_SectionHeaderCharacteristics : uint32_t
 	IMAGE_SCN_MEM_READ = 0x40000000,
 	IMAGE_SCN_MEM_WRITE = 0x80000000
 };
-
 
 enum COFF_StorageClass : uint8_t
 {
@@ -1017,8 +1033,7 @@ int main(int argc, char *argv[])
 #endif
 		mcfp::make_option<std::string>("coff", "Write a PE/COFF file for Windows, values should be one of x64, x86 or arm64"),
 
-		mcfp::make_option("verbose,v", "Verbose output")
-	);
+		mcfp::make_option("verbose,v", "Verbose output"));
 
 	std::error_code ec;
 	config.parse(argc, argv, ec);
@@ -1064,7 +1079,7 @@ int main(int argc, char *argv[])
 	if (config.has("depends"))
 	{
 		std::vector<std::string> files;
-		
+
 		for (auto p : config.operands())
 		{
 			if (fs::is_directory(p))
@@ -1084,7 +1099,7 @@ int main(int argc, char *argv[])
 		for (size_t i = 0; i < files.size(); ++i)
 		{
 			auto &file = files[i];
-			
+
 			for (char c : { ' ', '$', '#' })
 			{
 				for (auto s = file.find(c); s != std::string::npos; s = file.find(c, s))
