@@ -27,6 +27,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 # set the project name
 project(mrc VERSION 1.3.11)
 
+include(CTest)
 include(FindFilesystem)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -85,9 +86,7 @@ add_executable(mrc-bootstrap ${PROJECT_SOURCE_DIR}/src/mrc.cpp ${PROJECT_SOURCE_
 target_link_libraries(mrc std::filesystem libmcfp::libmcfp)
 target_link_libraries(mrc-bootstrap std::filesystem libmcfp::libmcfp)
 
-if(ENABLE_TESTING)
-	enable_testing()
-
+if(BUILD_TESTING)
 	find_package(Boost REQUIRED)
 
 	file(GLOB UNIT_TEST_RSRC LIST_DIRECTORIES true ${PROJECT_SOURCE_DIR}/rsrc/*)
