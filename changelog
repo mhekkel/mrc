@@ -1,5 +1,5 @@
 Version 1.3.11
-- Better error reporting when check for libmcfp fails
+- Remove libmcfp as submodule
 
 Version 1.3.10
 - Check cmake version before trying to write dependency file commands
