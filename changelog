@@ -1,5 +1,7 @@
 Version 1.3.11
 - Remove libmcfp as submodule
+- Moved from Boost.Test to Catch2 for unit testing
+- Using FetchContent for dependencies
 
 Version 1.3.10
 - Check cmake version before trying to write dependency file commands
