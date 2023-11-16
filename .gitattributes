@@ -1,1 +1,2 @@
+rsrc/*.txt eol=lf
 rsrc/subdir/*.txt eol=lf
