@@ -1,3 +1,5 @@
+[![github CI](https://github.com/mhekkel/mrc/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/mhekkel/mrc/actions)
+
 Maartens Resource Compiler
 ==========================
 
