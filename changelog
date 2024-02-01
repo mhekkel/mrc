@@ -1,7 +1,14 @@
 Version 1.3.11
+- Added option --elf-template that can use an object
+  file or executable in ELF format as template to find
+  the correct --elf-* flags to use.
+  This option is used automatically by mrc when you
+  use it via the cmake plugin.
 - Remove libmcfp as submodule
 - Moved from Boost.Test to Catch2 for unit testing
 - Using FetchContent for dependencies
+- Dropped FindFilesystem, assuming std::filesystem is
+  standard by now.
 
 Version 1.3.10
 - Check cmake version before trying to write dependency file commands
