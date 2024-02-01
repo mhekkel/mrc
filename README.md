@@ -35,8 +35,8 @@ Then include this file and use it:
    mrsrc::rsrc hello("texts/greeting");
    if (hello)
    {
-     string s(hello.data(), hello.size());
-     cout << s << endl;
+     std::string s(hello.data(), hello.size());
+     std::cout << s << endl;
    }
    
    return 0;
