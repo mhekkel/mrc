@@ -39,9 +39,9 @@
 #include <iostream>
 
 #if __has_include(<elf.h>)
-#include <elf.h>
+# include <elf.h>
 #elif not defined(EM_NONE)
-#define EM_NONE 0
+# define EM_NONE 0
 #endif
 
 #include <fcntl.h>
@@ -54,7 +54,7 @@
 #include "revision.hpp"
 
 #ifndef PATH_MAX
-#define PATH_MAX 1024
+# define PATH_MAX 1024
 #endif
 
 namespace fs = std::filesystem;
@@ -93,6 +93,19 @@ uint32_t AddNameToNameTable(std::string &ioNameTable, const std::string &inName)
 
 // --------------------------------------------------------------------
 
+struct elf_config
+{
+	int elf_machine;
+	int elf_class;
+	int elf_data;
+	int elf_flags;
+	int elf_abi;
+
+	bool operator==(const elf_config &) const = default;
+};
+
+// --------------------------------------------------------------------
+
 struct MObjectFileImp
 {
 	fs::path mFile;
@@ -103,7 +116,7 @@ struct MObjectFileImp
 
 	virtual void Write(std::ofstream &inFile) = 0;
 
-	static MObjectFileImp *Create(int machine, int elf_class, int elf_data, int elf_abi, int flags);
+	static MObjectFileImp *Create(elf_config elfc);
 
   protected:
 	friend class MObjectFile;
@@ -208,7 +221,7 @@ typedef swapper msb_swapper;
 typedef swapper lsb_swapper;
 typedef no_swapper msb_swapper;
 #else
-#error Undefined endianness
+# error Undefined endianness
 #endif
 
 } // namespace Swap
@@ -232,6 +245,7 @@ uint32_t WriteDataAligned(std::ofstream &inStream, const void *inData, uint32_t 
 // --------------------------------------------------------------------
 //
 //	Implementation for ELF
+
 #if __has_include(<elf.h>)
 
 template <int ELF_CLASSXXXX>
@@ -795,21 +809,21 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 // --------------------------------------------------------------------
 
 #if __has_include(<elf.h>)
-MObjectFileImp *MObjectFileImp::Create(int machine, int elf_class, int elf_data, int elf_abi, int flags)
+MObjectFileImp *MObjectFileImp::Create(elf_config elfc)
 {
 	MObjectFileImp *result = nullptr;
 
-	if (elf_class == ELFCLASS32 and elf_data == ELFDATA2LSB)
-		result = new MELFObjectFileImp<ELFCLASS32, ELFDATA2LSB>(machine, elf_abi, flags);
-	else if (elf_class == ELFCLASS32 and elf_data == ELFDATA2MSB)
-		result = new MELFObjectFileImp<ELFCLASS32, ELFDATA2MSB>(machine, elf_abi, flags);
-	else if (elf_class == ELFCLASS64 and elf_data == ELFDATA2LSB)
-		result = new MELFObjectFileImp<ELFCLASS64, ELFDATA2LSB>(machine, elf_abi, flags);
-	else if (elf_class == ELFCLASS64 and elf_data == ELFDATA2MSB)
-		result = new MELFObjectFileImp<ELFCLASS64, ELFDATA2MSB>(machine, elf_abi, flags);
+	if (elfc.elf_class == ELFCLASS32 and elfc.elf_data == ELFDATA2LSB)
+		result = new MELFObjectFileImp<ELFCLASS32, ELFDATA2LSB>(elfc.elf_machine, elfc.elf_abi, elfc.elf_flags);
+	else if (elfc.elf_class == ELFCLASS32 and elfc.elf_data == ELFDATA2MSB)
+		result = new MELFObjectFileImp<ELFCLASS32, ELFDATA2MSB>(elfc.elf_machine, elfc.elf_abi, elfc.elf_flags);
+	else if (elfc.elf_class == ELFCLASS64 and elfc.elf_data == ELFDATA2LSB)
+		result = new MELFObjectFileImp<ELFCLASS64, ELFDATA2LSB>(elfc.elf_machine, elfc.elf_abi, elfc.elf_flags);
+	else if (elfc.elf_class == ELFCLASS64 and elfc.elf_data == ELFDATA2MSB)
+		result = new MELFObjectFileImp<ELFCLASS64, ELFDATA2MSB>(elfc.elf_machine, elfc.elf_abi, elfc.elf_flags);
 	else
 	{
-		std::cerr << "Unsupported ELF class and/or data " << elf_class << ", " << elf_data << std::endl;
+		std::cerr << "Unsupported ELF class and/or data " << elfc.elf_class << ", " << elfc.elf_data << std::endl;
 		exit(1);
 	}
 
@@ -823,8 +837,8 @@ class MObjectFile
 {
   public:
 #if __has_include(<elf.h>)
-	MObjectFile(int machine, int elf_class, int elf_data, int elf_abi, int flags)
-		: mImpl(MObjectFileImp::Create(machine, elf_class, elf_data, elf_abi, flags))
+	MObjectFile(elf_config elfc)
+		: mImpl(MObjectFileImp::Create(elfc))
 	{
 	}
 #endif
@@ -1009,6 +1023,71 @@ void MResourceFile::Write(MObjectFile &obj)
 
 // --------------------------------------------------------------------
 
+#if __has_include(<elf.h>)
+
+elf_config get_elf_options(std::filesystem::path object_file)
+{
+	elf_config elfc{};
+
+	int fd = open(object_file.c_str(), O_RDONLY);
+	
+	if (fd < 0)
+	{
+		std::cerr << "Error opening template file " << std::quoted(object_file.string()) << '\n';
+		exit(1);
+	}
+
+
+	unsigned char e_ident[16];
+
+	if (read(fd, e_ident, sizeof(e_ident)) == sizeof(e_ident) and
+		e_ident[EI_MAG0] == ELFMAG0 and e_ident[EI_MAG1] == ELFMAG1 and e_ident[EI_MAG2] == ELFMAG2 and e_ident[EI_MAG3] == ELFMAG3)
+	{
+		// Yes, we're an ELF!
+
+		elfc.elf_class = e_ident[EI_CLASS];
+		elfc.elf_data = e_ident[EI_DATA];
+		if (e_ident[EI_ABIVERSION])
+			elfc.elf_abi = e_ident[EI_ABIVERSION];
+
+		lseek(fd, 0, SEEK_SET);
+
+		switch (elfc.elf_class)
+		{
+			case ELFCLASS32:
+			{
+				Elf32_Ehdr hdr;
+				if (read(fd, &hdr, sizeof(hdr)) == sizeof(Elf32_Ehdr))
+				{
+					elfc.elf_machine = hdr.e_machine;
+					elfc.elf_flags = hdr.e_flags;
+				}
+				break;
+			}
+
+			case ELFCLASS64:
+			{
+				Elf64_Ehdr hdr;
+				if (read(fd, &hdr, sizeof(hdr)) == sizeof(Elf64_Ehdr))
+				{
+					elfc.elf_machine = hdr.e_machine;
+					elfc.elf_flags = hdr.e_flags;
+				}
+				break;
+			}
+
+			default:
+				std::cerr << "Unknown ELF class" << std::endl;
+		}
+	}
+
+	return elfc;
+}
+
+#endif
+
+// --------------------------------------------------------------------
+
 int main(int argc, char *argv[])
 {
 	auto &config = mcfp::config::instance();
@@ -1025,6 +1104,8 @@ int main(int argc, char *argv[])
 		mcfp::make_option<std::string>("depends,d", "Print a list of files the resource depends upon to the file specified"),
 
 #if __has_include(<elf.h>)
+		mcfp::make_option<std::string>("elf-template", "Use the specified file to extract the required ELF flags and properties"),
+
 		mcfp::make_option<int>("elf-machine", "The ELF machine type to use, default is same as this machine. Use one of the values from elf.h"),
 		mcfp::make_option<int>("elf-class", "ELF class, default is same as this machine. Acceptable values are 1 (32bit) and 2 (64bit)."),
 		mcfp::make_option<int>("elf-data", "ELF endianness, default is same as this machine. Acceptable values are 1 (little-endian, LSB) and 2 (big-endian, MSB)."),
@@ -1121,73 +1202,30 @@ int main(int argc, char *argv[])
 	}
 
 	// --------------------------------------------------------------------
-	// find out the native format. Simply look at how we were assembled ourselves
+	// find out the required ELF format.
 
-	int elf_machine = EM_NONE, elf_class = 0, elf_data = 0, elf_flags = 0, elf_abi = 0;
+	elf_config elfc{};
 
 #if not defined(_WIN32)
-	char exePath[PATH_MAX + 1];
-#if __linux or __linux__
-	elf_abi = ELFOSABI_LINUX;
-	int r = readlink("/proc/self/exe", exePath, PATH_MAX);
-#elif __FreeBSD__
-	elf_abi = ELFOSABI_FREEBSD;
-	int r = strlen(argv[0]);
-	strcpy(exePath, argv[0]);
-#else
-#error "Unsupported OS, sorry..."
-#endif
-
-	if (r > 0)
+	// Use a template, if specified
+	if (config.has("elf-template"))
+		elfc = get_elf_options(config.get<std::string>("elf-template"));
+	// use ourselves otherwise
+	else
 	{
-		exePath[r] = 0;
-
-		int fd = open(exePath, O_RDONLY);
-		if (fd >= 0)
-		{
-			unsigned char e_ident[16];
-
-			if (read(fd, e_ident, sizeof(e_ident)) == sizeof(e_ident) and
-				e_ident[EI_MAG0] == ELFMAG0 and e_ident[EI_MAG1] == ELFMAG1 and e_ident[EI_MAG2] == ELFMAG2 and e_ident[EI_MAG3] == ELFMAG3)
-			{
-				// Yes, we're an ELF!
-
-				elf_class = e_ident[EI_CLASS];
-				elf_data = e_ident[EI_DATA];
-				if (e_ident[EI_ABIVERSION])
-					elf_abi = e_ident[EI_ABIVERSION];
-
-				lseek(fd, 0, SEEK_SET);
-
-				switch (elf_class)
-				{
-					case ELFCLASS32:
-					{
-						Elf32_Ehdr hdr;
-						if (read(fd, &hdr, sizeof(hdr)) == sizeof(Elf32_Ehdr))
-						{
-							elf_machine = hdr.e_machine;
-							elf_flags = hdr.e_flags;
-						}
-						break;
-					}
-
-					case ELFCLASS64:
-					{
-						Elf64_Ehdr hdr;
-						if (read(fd, &hdr, sizeof(hdr)) == sizeof(Elf64_Ehdr))
-						{
-							elf_machine = hdr.e_machine;
-							elf_flags = hdr.e_flags;
-						}
-						break;
-					}
-
-					default:
-						std::cerr << "Unknown ELF class" << std::endl;
-				}
-			}
-		}
+		char exePath[PATH_MAX + 1];
+# if __linux or __linux__
+		elfc.elf_abi = ELFOSABI_LINUX;
+		int r = readlink("/proc/self/exe", exePath, PATH_MAX);
+# elif __FreeBSD__
+		elfc.elf_abi = ELFOSABI_FREEBSD;
+		int r = strlen(argv[0]);
+		strcpy(exePath, argv[0]);
+# else
+#  error "Unsupported OS, sorry..."
+# endif
+		if (r > 0)
+			elfc = get_elf_options(exePath);
 	}
 #endif
 
@@ -1213,13 +1251,13 @@ int main(int argc, char *argv[])
 
 		uint16_t win_machine = {};
 #if defined(_WIN32)
-#if defined(_M_AMD64)
+# if defined(_M_AMD64)
 		win_machine = IMAGE_FILE_MACHINE_AMD64;
-#elif defined(_M_ARM64)
+# elif defined(_M_ARM64)
 		win_machine = IMAGE_FILE_MACHINE_ARM64;
-#elif defined(_M_IX86)
+# elif defined(_M_IX86)
 		win_machine = IMAGE_FILE_MACHINE_I386;
-#endif
+# endif
 #endif
 
 		if (config.has("coff"))
@@ -1234,23 +1272,22 @@ int main(int argc, char *argv[])
 				throw std::runtime_error("Unsupported machine for COFF: " + config.get<std::string>("coff"));
 		}
 
-		bool target_elf = config.has("elf-machine") and config.has("elf-class") and config.has("elf-data") and config.has("elf-flags");
 		if (config.has("elf-machine"))
-			elf_machine = config.get<int>("elf-machine");
+			elfc.elf_machine = config.get<int>("elf-machine");
 
 		if (config.has("elf-class"))
-			elf_class = config.get<int>("elf-class");
+			elfc.elf_class = config.get<int>("elf-class");
 
 		if (config.has("elf-data"))
-			elf_data = config.get<int>("elf-data");
+			elfc.elf_data = config.get<int>("elf-data");
 
 		if (config.has("elf-abi"))
-			elf_abi = config.get<int>("elf-abi");
+			elfc.elf_abi = config.get<int>("elf-abi");
 
 		if (config.has("elf-flags"))
-			elf_flags = config.get<int>("elf-flags");
+			elfc.elf_flags = config.get<int>("elf-flags");
 
-		if (win_machine and not target_elf)
+		if (win_machine and elfc != elf_config{})
 		{
 			MObjectFile obj(win_machine);
 			rsrcFile.Write(obj);
@@ -1259,7 +1296,7 @@ int main(int argc, char *argv[])
 		else
 #if __has_include(<elf.h>)
 		{
-			MObjectFile obj(elf_machine, elf_class, elf_data, elf_abi, elf_flags);
+			MObjectFile obj(elfc);
 			rsrcFile.Write(obj);
 			obj.Write(file);
 		}

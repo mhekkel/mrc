@@ -29,10 +29,9 @@ project(mrc VERSION 1.3.11)
 
 include(CTest)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-find_package(Filesystem REQUIRED)
 
 if(MSVC)
 	# make msvc standards compliant...
@@ -87,8 +86,8 @@ add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/mrc-rsrc.obj
 add_executable(mrc ${PROJECT_SOURCE_DIR}/src/mrc.cpp ${CMAKE_BINARY_DIR}/mrc-rsrc.obj)
 add_executable(mrc-bootstrap ${PROJECT_SOURCE_DIR}/src/mrc.cpp ${PROJECT_SOURCE_DIR}/src/dummy.cpp)
 
-target_link_libraries(mrc std::filesystem libmcfp::libmcfp)
-target_link_libraries(mrc-bootstrap std::filesystem libmcfp::libmcfp)
+target_link_libraries(mrc libmcfp::libmcfp)
+target_link_libraries(mrc-bootstrap libmcfp::libmcfp)
 
 if(BUILD_TESTING)
 	find_package(Catch2 3 QUIET)

@@ -1,7 +1,5 @@
 .vscode/
-mrc
-mrc-unit-test
-mrc-bootstrap
-build/
+**/build/
 src/revision.hpp
 src/version.hpp
+**/sdkconfig*

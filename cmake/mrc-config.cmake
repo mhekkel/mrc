@@ -84,6 +84,24 @@ find_package_handle_standard_args(Mrc
     REQUIRED_VARS MRC_EXECUTABLE
     VERSION_VAR MRC_VERSION_STRING)
 
+# internal, create an ELF template file based on the current compiler flags and all
+
+function(_mrc_create_elf_template _target)
+	try_compile(BUILD_OK
+		SOURCE_FROM_CONTENT my_code.cpp [[
+extern "C" int my_global_int = 42;
+int main() { return 0; }
+]]
+		NO_CACHE
+		NO_LOG
+		COPY_FILE "${CMAKE_CURRENT_BINARY_DIR}/${_target}_rsrc_template.exe"
+	)
+
+	if(NOT BUILD_OK)
+		message(FATAL_ERROR "Failed to create template executable")
+	endif()
+endfunction()
+
 #[=======================================================================[.rst:
 .. command:: mrc_target_resources
 
@@ -118,11 +136,17 @@ find_package_handle_standard_args(Mrc
 	with their filename. Directories will be added recursively, if the
 	directory name ends with a slash character, the directory part of
 	the name will be stripped.
+
+	``CREATE_ELF_TEMPLATE``
+	Create a small executable to be used as template for the ELF object
+	file generation. This is executable is built using the same compiler
+	settings as the final project and thus contains the correct ELF
+	header from which mrc can copy the necessary information.
 #]=======================================================================]
 
 function(mrc_target_resources _target)
 
-	set(flags VERBOSE)
+	set(flags VERBOSE CREATE_ELF_TEMPLATE)
 	set(options COFF_TYPE RSRC_FILE DEPENDS_FILE)
 	set(sources RESOURCES)
 	cmake_parse_arguments(MRC_OPTION "${flags}" "${options}" "${sources}" ${ARGN})
@@ -175,9 +199,16 @@ function(mrc_target_resources _target)
 		list(APPEND MRC_OPTION_RESOURCES "--verbose")
 	endif()
 
+	if(CMAKE_CROSSCOMPILING OR ${MRC_OPTION_CREATE_ELF_TEMPLATE})
+		_mrc_create_elf_template(${_target})
+		list(APPEND MRC_OPTION_RESOURCES "--elf-template=${CMAKE_CURRENT_BINARY_DIR}/${_target}_rsrc_template.exe")
+	endif()
+
+	cmake_policy(SET CMP0116 NEW)
+
 	# If we can use DEPFILE, use it. 
 	if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.21")
-		add_custom_target("mrc-depends-file_${_target}" ALL
+			add_custom_target("mrc-depends-file_${_target}" ALL
 			BYPRODUCTS ${RSRC_DEP_FILE}
 			COMMAND ${MRC_EXECUTABLE} -o ${RSRC_FILE} -d ${RSRC_DEP_FILE} ${MRC_OPTION_RESOURCES}
 			VERBATIM)
