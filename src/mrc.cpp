@@ -1287,7 +1287,7 @@ int main(int argc, char *argv[])
 		if (config.has("elf-flags"))
 			elfc.elf_flags = config.get<int>("elf-flags");
 
-		if (win_machine and elfc != elf_config{})
+		if (win_machine and elfc == elf_config{})
 		{
 			MObjectFile obj(win_machine);
 			rsrcFile.Write(obj);
