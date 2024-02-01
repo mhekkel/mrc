@@ -36,7 +36,7 @@ Then include this file and use it:
    if (hello)
    {
      std::string s(hello.data(), hello.size());
-     std::cout << s << endl;
+     std::cout << s << '\n';
    }
    
    return 0;
