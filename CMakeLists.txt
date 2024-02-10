@@ -28,6 +28,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 project(mrc VERSION 1.3.11)
 
 include(CTest)
+include(FetchContent)
 
 set(CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD 20)
@@ -61,19 +62,8 @@ if(WIN32)
 	message(STATUS "Using COFF spec: ${COFF_SPEC}")
 endif()
 
-find_package(libmcfp 1.2.4 QUIET)
-
-if(NOT libmcfp_FOUND)
-	include(FetchContent)
-
-	FetchContent_Declare(
-		libmcfp
-		GIT_REPOSITORY https://github.com/mhekkel/libmcfp
-		GIT_TAG v1.2.4
-	)
-
-	FetchContent_MakeAvailable(libmcfp)
-endif()
+FetchContent_Declare(libmcfp GIT_REPOSITORY https://github.com/mhekkel/libmcfp GIT_TAG v1.2.4)
+FetchContent_MakeAvailable(libmcfp)
 
 include(VersionString)
 write_version_header(${PROJECT_SOURCE_DIR}/src/)
@@ -90,19 +80,8 @@ target_link_libraries(mrc libmcfp::libmcfp)
 target_link_libraries(mrc-bootstrap libmcfp::libmcfp)
 
 if(BUILD_TESTING)
-	find_package(Catch2 3 QUIET)
-
-	if(NOT Catch2_FOUND)
-		Include(FetchContent)
-
-		FetchContent_Declare(
-			Catch2
-			GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-			GIT_TAG v3.5.2 # or a later release
-		)
-
-		FetchContent_MakeAvailable(Catch2)
-	endif()
+	FetchContent_Declare(Catch2 GIT_REPOSITORY https://github.com/catchorg/Catch2.git GIT_TAG v2.13.9)
+	FetchContent_MakeAvailable(Catch2)
 
 	file(GLOB UNIT_TEST_RSRC LIST_DIRECTORIES true ${PROJECT_SOURCE_DIR}/rsrc/*)
 
@@ -112,7 +91,7 @@ if(BUILD_TESTING)
 	)
 
 	add_executable(mrc-unit-test ${PROJECT_SOURCE_DIR}/src/mrc-unit-test.cpp ${CMAKE_BINARY_DIR}/mrc-unit-test-rsrc.obj)
-	target_link_libraries(mrc-unit-test Catch2::Catch2WithMain)
+	target_link_libraries(mrc-unit-test Catch2::Catch2)
 
 	add_test(NAME unit-test COMMAND $<TARGET_FILE:mrc-unit-test> WORKING_DIRECTORY .)
 endif()
@@ -127,4 +106,4 @@ else()
 	install(FILES doc/mrc.1 DESTINATION share/man/man1)
 endif()
 
-install(DIRECTORY example DESTINATION share/doc/mrc/)
+install(DIRECTORY examples DESTINATION share/doc/mrc/)

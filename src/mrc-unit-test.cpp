@@ -1,9 +1,12 @@
-#include <catch2/catch_test_macros.hpp>
+#define CATCH_CONFIG_MAIN
+#include <catch2/catch.hpp>
 
 #include "mrsrc.h"
 
 #include <iostream>
 #include <set>
+
+#include <cstring>
 
 TEST_CASE("test_1", "test_1")
 {

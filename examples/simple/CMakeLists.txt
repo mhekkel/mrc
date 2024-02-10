@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
+list(PREPEND CMAKE_PREFIX_PATH ../../cmake)
+
 # set the project name
 project(mrc-user VERSION 1.0.0 LANGUAGES CXX)
 
@@ -18,7 +20,14 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 # The executable to create
 add_executable(mrc-user ${CMAKE_CURRENT_SOURCE_DIR}/mrc-user.cpp)
 
-# Add the hello.txt file as a resource, more files and/or directories
-# can be specified here
-mrc_target_resources(mrc-user CREATE_ELF_TEMPLATE VERBOSE
-	RESOURCES ${CMAKE_CURRENT_SOURCE_DIR}/hello.txt)
+# # Add the hello.txt file as a resource, more files and/or directories
+# # can be specified here
+# mrc_target_resources(mrc-user CREATE_ELF_TEMPLATE VERBOSE
+# 	RESOURCES ${CMAKE_CURRENT_SOURCE_DIR}/hello.txt)
+
+
+add_library(rsrc STATIC)
+set_target_properties(rsrc PROPERTIES LINKER_LANGUAGE "CXX")
+mrc_target_resources(rsrc CREATE_ELF_TEMPLATE VERBOSE
+ 	RESOURCES ${CMAKE_CURRENT_SOURCE_DIR}/hello.txt)
+target_link_libraries(mrc-user PRIVATE rsrc)
