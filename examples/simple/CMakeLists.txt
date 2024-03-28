@@ -6,7 +6,8 @@ list(PREPEND CMAKE_PREFIX_PATH ../../cmake)
 project(mrc-user VERSION 1.0.0 LANGUAGES CXX)
 
 # Locate the mrc executable and load the mrc_* functions
-find_package(Mrc)
+# This of course only works when you have installed mrc already
+find_package(mrc)
 
 # resources depend on C++17 features, like std::filesystem
 set(CXX_EXTENSIONS OFF)
@@ -24,10 +25,13 @@ add_executable(mrc-user ${CMAKE_CURRENT_SOURCE_DIR}/mrc-user.cpp)
 # # can be specified here
 # mrc_target_resources(mrc-user CREATE_ELF_TEMPLATE VERBOSE
 # 	RESOURCES ${CMAKE_CURRENT_SOURCE_DIR}/hello.txt)
-
+#
+# But you can also create a static library containing the resources
+# and then link to that static library:
 
 add_library(rsrc STATIC)
 set_target_properties(rsrc PROPERTIES LINKER_LANGUAGE "CXX")
 mrc_target_resources(rsrc CREATE_ELF_TEMPLATE VERBOSE
  	RESOURCES ${CMAKE_CURRENT_SOURCE_DIR}/hello.txt)
 target_link_libraries(mrc-user PRIVATE rsrc)
+

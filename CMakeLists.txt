@@ -129,4 +129,4 @@ endif()
 
 install(DIRECTORY examples DESTINATION share/doc/mrc/)
 
-add_subdirectory(examples/simple)
+# add_subdirectory(examples/simple)
