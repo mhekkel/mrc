@@ -171,7 +171,7 @@ function(mrc_target_resources _target)
 		set(RSRC_FILE "${_dir}/rsrc.obj")
 	endif()
 
-	if(MRC_OTPION_RSRC_DEP_FILE)
+	if(MRC_OPTION_RSRC_DEP_FILE)
 		set(RSRC_DEP_FILE "${MRC_OPTION_DEPENDS_FILE}")
 	else()
 		set(RSRC_DEP_FILE "${_dir}/rsrc.d")
