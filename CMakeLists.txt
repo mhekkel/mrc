@@ -72,7 +72,7 @@ if(NOT libmcfp_FOUND)
 		GIT_TAG v1.2.4
 	)
 
-FetchContent_MakeAvailable(libmcfp)
+	FetchContent_MakeAvailable(libmcfp)
 endif()
 
 include(VersionString)
@@ -101,8 +101,8 @@ if(BUILD_TESTING)
 			GIT_TAG v3.5.2 # or a later release
 		)
 
-	FetchContent_MakeAvailable(Catch2)
-endif()
+		FetchContent_MakeAvailable(Catch2)
+	endif()
 
 	file(GLOB UNIT_TEST_RSRC LIST_DIRECTORIES true ${PROJECT_SOURCE_DIR}/rsrc/*)
 
@@ -112,7 +112,7 @@ endif()
 	)
 
 	add_executable(mrc-unit-test ${PROJECT_SOURCE_DIR}/src/mrc-unit-test.cpp ${CMAKE_BINARY_DIR}/mrc-unit-test-rsrc.obj)
-	target_link_libraries(mrc-unit-test Catch2::Catch2)
+	target_link_libraries(mrc-unit-test Catch2::Catch2WithMain)
 
 	add_test(NAME unit-test COMMAND $<TARGET_FILE:mrc-unit-test> WORKING_DIRECTORY .)
 endif()

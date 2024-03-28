@@ -1,5 +1,5 @@
 #define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
+#include <catch2/catch_all.hpp>
 
 #include "mrsrc.h"
 
@@ -18,7 +18,8 @@ TEST_CASE("test_1", "test_1")
 	REQUIRE(r1.size() == 50);
 
 	int r = std::memcmp(r1.data(), R"(This is the first line
-And this is the second line)", r1.size());
+And this is the second line)",
+		r1.size());
 
 	REQUIRE(r == 0);
 }
@@ -31,15 +32,15 @@ TEST_CASE("test_2", "test_2")
 
 	REQUIRE(r2.data() != nullptr);
 	REQUIRE(r2.size() == 102);
-/*
-		const char16_t* t = u"\xfeffThis is the first line\
-And this is the second line";
-		// t[0] = 0xfeff;
+	/*
+	        const char16_t* t = u"\xfeffThis is the first line\
+	And this is the second line";
+	        // t[0] = 0xfeff;
 
-		int r = std::memcmp(r2.data(), (char*)t, r2.size());
+	        int r = std::memcmp(r2.data(), (char*)t, r2.size());
 
-		REQUIRE(r == 0);
-*/
+	        REQUIRE(r == 0);
+	*/
 }
 
 TEST_CASE("test_3", "test_3")
@@ -74,16 +75,16 @@ TEST_CASE("test_10", "test_10")
 	REQUIRE(std::distance(r0.begin(), r0.end()) == 3);
 
 	std::set<std::string> found;
-	for (auto& r1: r0)
+	for (auto &r1 : r0)
 		found.insert(r1.name());
 
-	std::set<std::string> kTest{"resource-1.txt", "resource-2.txt", "subdir"};
+	std::set<std::string> kTest{ "resource-1.txt", "resource-2.txt", "subdir" };
 
 	REQUIRE(found == kTest);
 
 	if (found != kTest)
 	{
-		for (auto& f: found)
+		for (auto &f : found)
 			std::cout << f << std::endl;
 	}
 }
@@ -132,4 +133,3 @@ TEST_CASE("test_14", "test_14")
 	REQUIRE((bool)ri == false);
 	REQUIRE(ri.bad() == true);
 }
-
