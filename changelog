@@ -1,6 +1,9 @@
-Version 1.3.12
+Version 1.3.13
 - Readlink does not write a null character, so we have
   to add it ourselves.
+
+Version 1.3.12
+- No longer using FetchContent by default
 
 Version 1.3.11
 - Added option --elf-template that can use an object
