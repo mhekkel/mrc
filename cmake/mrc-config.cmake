@@ -86,7 +86,6 @@ find_package_handle_standard_args(Mrc
 	VERSION_VAR MRC_VERSION_STRING)
 
 # internal, create an ELF template file based on the current compiler flags and all
-
 function(_mrc_create_elf_template _target)
 	try_compile(BUILD_OK
 		SOURCE_FROM_CONTENT my_code.cpp [[
@@ -151,7 +150,6 @@ endfunction()
 	header from which mrc can copy the necessary information.
 #]=======================================================================]
 function(mrc_target_resources _target)
-
 	set(flags VERBOSE CREATE_ELF_TEMPLATE)
 	set(options COFF_TYPE RSRC_FILE DEPENDS_FILE)
 	set(sources RESOURCES)
@@ -223,14 +221,16 @@ function(mrc_target_resources _target)
 
 	# If we can use DEPFILE, use it.
 	if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.21")
-			add_custom_target("mrc-depends-file_${_target}" ALL
-			BYPRODUCTS ${RSRC_DEP_FILE}
-			COMMAND ${MRC_EXECUTABLE} -o ${RSRC_FILE} -d ${RSRC_DEP_FILE}
+		add_custom_command(
+			OUTPUT ${RSRC_DEP_FILE}
+			COMMAND ${MRC_EXECUTABLE} -d ${RSRC_DEP_FILE}
 			${MRC_OPTION_RESOURCES}
 			VERBATIM)
+		add_custom_target("generate_${_target}_depfile")
 
 		add_custom_command(OUTPUT ${RSRC_FILE}
 			DEPFILE ${RSRC_DEP_FILE}
+			DEPENDS "generate_${_target}_depfile"
 			COMMAND ${MRC_EXECUTABLE} -o ${RSRC_FILE} ${OPTIONS}
 			${MRC_OPTION_RESOURCES}
 			VERBATIM)
