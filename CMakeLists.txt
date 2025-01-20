@@ -25,7 +25,7 @@ cmake_minimum_required(VERSION 3.10)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # set the project name
-project(mrc VERSION 1.3.12)
+project(mrc VERSION 1.3.13)
 
 include(CTest)
 
@@ -127,4 +127,6 @@ else()
 	install(FILES doc/mrc.1 DESTINATION share/man/man1)
 endif()
 
-install(DIRECTORY example DESTINATION share/doc/mrc/)
+install(DIRECTORY examples DESTINATION share/doc/mrc/)
+
+# add_subdirectory(examples/simple)

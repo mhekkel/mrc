@@ -1225,7 +1225,10 @@ int main(int argc, char *argv[])
 #  error "Unsupported OS, sorry..."
 # endif
 		if (r > 0)
+		{
+			exePath[r] = 0; // The NULL is not written by readlink
 			elfc = get_elf_options(exePath);
+		}
 	}
 #endif
 
