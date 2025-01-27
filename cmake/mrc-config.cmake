@@ -222,14 +222,16 @@ function(mrc_target_resources _target)
 	# If we can use DEPFILE, use it.
 	if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.21")
 		add_custom_target(
-			OUTPUT ${RSRC_DEP_FILE}
-			COMMAND ${MRC_EXECUTABLE} -d ${RSRC_DEP_FILE}
+			"generate_${_target}_depends_file"
+			BYPRODUCTS ${RSRC_DEP_FILE}
+			COMMENT "Generating depends file for ${_target} resources"
+			COMMAND ${MRC_EXECUTABLE} -d ${RSRC_DEP_FILE} -o ${RSRC_FILE}
 			${MRC_OPTION_RESOURCES}
 			VERBATIM)
 
 		add_custom_command(OUTPUT ${RSRC_FILE}
 			DEPFILE ${RSRC_DEP_FILE}
-			DEPENDS ${RSRC_DEP_FILE}
+			DEPENDS "generate_${_target}_depends_file"
 			COMMAND ${MRC_EXECUTABLE} -o ${RSRC_FILE} ${OPTIONS}
 			${MRC_OPTION_RESOURCES}
 			VERBATIM)

@@ -1149,8 +1149,7 @@ int main(int argc, char *argv[])
 		exit(0);
 	}
 
-	if (config.has("help") or config.operands().empty() or
-		not (config.has("output") or config.has("depends")))
+	if (config.has("help") or config.operands().empty() or not config.has("output"))
 	{
 		std::cout << config << std::endl;
 		exit(config.has("help") ? 0 : 1);
@@ -1201,9 +1200,6 @@ int main(int argc, char *argv[])
 
 		exit(0);
 	}
-
-	if (not config.has("output"))
-		return 0;
 
 	// --------------------------------------------------------------------
 	// find out the required ELF format.
