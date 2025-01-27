@@ -61,7 +61,7 @@ if(WIN32)
 	message(STATUS "Using COFF spec: ${COFF_SPEC}")
 endif()
 
-find_package(mcfp 1.3.4 REQUIRED)
+find_package(mcfp 1.3.4 QUIET)
 
 if(NOT mcfp_FOUND)
 	include(FetchContent)
