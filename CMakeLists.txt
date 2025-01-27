@@ -61,7 +61,7 @@ if(WIN32)
 	message(STATUS "Using COFF spec: ${COFF_SPEC}")
 endif()
 
-find_package(mcfp 1.3.4 QUIET)
+find_package(mcfp 1.3.5 QUIET)
 
 if(NOT mcfp_FOUND)
 	include(FetchContent)
@@ -69,7 +69,7 @@ if(NOT mcfp_FOUND)
 	FetchContent_Declare(
 		mcfp
 		GIT_REPOSITORY https://github.com/mhekkel/libmcfp
-		GIT_TAG v1.3.4
+		GIT_TAG v1.3.5
 	)
 
 	FetchContent_MakeAvailable(mcfp)
@@ -98,7 +98,7 @@ if(BUILD_TESTING)
 		FetchContent_Declare(
 			Catch2
 			GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-			GIT_TAG v3.5.2 # or a later release
+			GIT_TAG v3.8.0 # or a later release
 		)
 
 		FetchContent_MakeAvailable(Catch2)
