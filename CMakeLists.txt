@@ -32,6 +32,7 @@ include(CTest)
 set(CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(FETCH_CATCH2 OFF CACHE BOOL "Force using a private copy of catch2")
 
 if(MSVC)
 	# make msvc standards compliant...
@@ -90,7 +91,9 @@ target_link_libraries(mrc mcfp::mcfp)
 target_link_libraries(mrc-bootstrap mcfp::mcfp)
 
 if(BUILD_TESTING)
-	find_package(Catch2 3 QUIET)
+	if(NOT FETCH_CATCH2)
+		find_package(Catch2 3 QUIET)
+	endif()
 
 	if(NOT Catch2_FOUND)
 		Include(FetchContent)
