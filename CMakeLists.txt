@@ -61,18 +61,18 @@ if(WIN32)
 	message(STATUS "Using COFF spec: ${COFF_SPEC}")
 endif()
 
-find_package(libmcfp 1.2.4 QUIET)
+find_package(mcfp 1.3.4 REQUIRED)
 
-if(NOT libmcfp_FOUND)
+if(NOT mcfp_FOUND)
 	include(FetchContent)
 
 	FetchContent_Declare(
-		libmcfp
+		mcfp
 		GIT_REPOSITORY https://github.com/mhekkel/libmcfp
-		GIT_TAG v1.2.4
+		GIT_TAG v1.3.4
 	)
 
-	FetchContent_MakeAvailable(libmcfp)
+	FetchContent_MakeAvailable(mcfp)
 endif()
 
 include(VersionString)
@@ -86,8 +86,8 @@ add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/mrc-rsrc.obj
 add_executable(mrc ${PROJECT_SOURCE_DIR}/src/mrc.cpp ${CMAKE_BINARY_DIR}/mrc-rsrc.obj)
 add_executable(mrc-bootstrap ${PROJECT_SOURCE_DIR}/src/mrc.cpp ${PROJECT_SOURCE_DIR}/src/dummy.cpp)
 
-target_link_libraries(mrc libmcfp::libmcfp)
-target_link_libraries(mrc-bootstrap libmcfp::libmcfp)
+target_link_libraries(mrc mcfp::mcfp)
+target_link_libraries(mrc-bootstrap mcfp::mcfp)
 
 if(BUILD_TESTING)
 	find_package(Catch2 3 QUIET)
