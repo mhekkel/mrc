@@ -90,7 +90,7 @@ target_link_libraries(mrc mcfp::mcfp)
 target_link_libraries(mrc-bootstrap mcfp::mcfp)
 
 if(BUILD_TESTING)
-	find_package(Catch2 3 QUIET)
+	find_package(Catch2 3.8.0 QUIET)
 
 	if(NOT Catch2_FOUND)
 		Include(FetchContent)
