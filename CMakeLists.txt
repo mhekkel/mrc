@@ -90,20 +90,19 @@ target_link_libraries(mrc mcfp::mcfp)
 target_link_libraries(mrc-bootstrap mcfp::mcfp)
 
 if(BUILD_TESTING)
-	# find_package(Catch2 3.8.0 QUIET)
+	find_package(Catch2 3 QUIET)
 
-	# if(NOT Catch2_FOUND)
+	if(NOT Catch2_FOUND)
 		Include(FetchContent)
 
 		FetchContent_Declare(
 			Catch2
 			GIT_REPOSITORY https://github.com/catchorg/Catch2.git
 			GIT_TAG v3.8.0 # or a later release
-			OVERRIDE_FIND_PACKAGE
 		)
 
 		FetchContent_MakeAvailable(Catch2)
-	# endif()
+	endif()
 
 	file(GLOB UNIT_TEST_RSRC LIST_DIRECTORIES true ${PROJECT_SOURCE_DIR}/rsrc/*)
 
@@ -114,9 +113,13 @@ if(BUILD_TESTING)
 
 	add_executable(mrc-unit-test ${PROJECT_SOURCE_DIR}/src/mrc-unit-test.cpp ${CMAKE_BINARY_DIR}/mrc-unit-test-rsrc.obj)
 
-	target_link_libraries(mrc-unit-test Catch2::Catch2WithMain)
+	if(TARGET Catch2::Catch2WithMain)
+		target_link_libraries(mrc-unit-test Catch2::Catch2WithMain)
 
-	add_test(NAME unit-test COMMAND $<TARGET_FILE:mrc-unit-test> WORKING_DIRECTORY .)
+		add_test(NAME unit-test COMMAND $<TARGET_FILE:mrc-unit-test> WORKING_DIRECTORY .)
+	else()
+		message(WARNING "No Catch2::Catch2WithMain target, something is wrong")
+	endif()
 endif()
 
 install(TARGETS mrc)
