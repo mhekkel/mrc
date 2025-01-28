@@ -113,7 +113,7 @@ if(BUILD_TESTING)
 
 	add_executable(mrc-unit-test ${PROJECT_SOURCE_DIR}/src/mrc-unit-test.cpp ${CMAKE_BINARY_DIR}/mrc-unit-test-rsrc.obj)
 
-	target_link_libraries(mrc-unit-test Catch2::Catch2WithMain)
+	# target_link_libraries(mrc-unit-test Catch2::Catch2WithMain)
 
 	add_test(NAME unit-test COMMAND $<TARGET_FILE:mrc-unit-test> WORKING_DIRECTORY .)
 endif()
