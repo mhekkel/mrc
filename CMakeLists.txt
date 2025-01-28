@@ -90,9 +90,9 @@ target_link_libraries(mrc mcfp::mcfp)
 target_link_libraries(mrc-bootstrap mcfp::mcfp)
 
 if(BUILD_TESTING)
-	find_package(Catch2 3.8.0 QUIET)
+	# find_package(Catch2 3.8.0 QUIET)
 
-	if(NOT Catch2_FOUND)
+	# if(NOT Catch2_FOUND)
 		Include(FetchContent)
 
 		FetchContent_Declare(
@@ -102,7 +102,7 @@ if(BUILD_TESTING)
 		)
 
 		FetchContent_MakeAvailable(Catch2)
-	endif()
+	# endif()
 
 	file(GLOB UNIT_TEST_RSRC LIST_DIRECTORIES true ${PROJECT_SOURCE_DIR}/rsrc/*)
 
