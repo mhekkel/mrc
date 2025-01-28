@@ -99,6 +99,7 @@ if(BUILD_TESTING)
 			Catch2
 			GIT_REPOSITORY https://github.com/catchorg/Catch2.git
 			GIT_TAG v3.8.0 # or a later release
+			OVERRIDE_FIND_PACKAGE
 		)
 
 		FetchContent_MakeAvailable(Catch2)
@@ -113,7 +114,7 @@ if(BUILD_TESTING)
 
 	add_executable(mrc-unit-test ${PROJECT_SOURCE_DIR}/src/mrc-unit-test.cpp ${CMAKE_BINARY_DIR}/mrc-unit-test-rsrc.obj)
 
-	# target_link_libraries(mrc-unit-test Catch2::Catch2WithMain)
+	target_link_libraries(mrc-unit-test Catch2::Catch2WithMain)
 
 	add_test(NAME unit-test COMMAND $<TARGET_FILE:mrc-unit-test> WORKING_DIRECTORY .)
 endif()
