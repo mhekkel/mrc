@@ -104,22 +104,18 @@ if(BUILD_TESTING)
 		FetchContent_MakeAvailable(Catch2)
 	endif()
 
-	if(TARGET Catch2::Catch2WithMain)
-		file(GLOB UNIT_TEST_RSRC LIST_DIRECTORIES true ${PROJECT_SOURCE_DIR}/rsrc/*)
+	file(GLOB UNIT_TEST_RSRC LIST_DIRECTORIES true ${PROJECT_SOURCE_DIR}/rsrc/*)
 
-		add_custom_command(OUTPUT mrc-unit-test-rsrc.obj
-			COMMAND $<TARGET_FILE:mrc-bootstrap> -o mrc-unit-test-rsrc.obj ${UNIT_TEST_RSRC} ${COFF_SPEC}
-			DEPENDS ${UNIT_TEST_RSRC} mrc-bootstrap
-		)
-	
-		add_executable(mrc-unit-test ${PROJECT_SOURCE_DIR}/src/mrc-unit-test.cpp ${CMAKE_BINARY_DIR}/mrc-unit-test-rsrc.obj)
+	add_custom_command(OUTPUT mrc-unit-test-rsrc.obj
+		COMMAND $<TARGET_FILE:mrc-bootstrap> -o mrc-unit-test-rsrc.obj ${UNIT_TEST_RSRC} ${COFF_SPEC}
+		DEPENDS ${UNIT_TEST_RSRC} mrc-bootstrap
+	)
 
-		target_link_libraries(mrc-unit-test Catch2::Catch2WithMain)
+	add_executable(mrc-unit-test ${PROJECT_SOURCE_DIR}/src/mrc-unit-test.cpp ${CMAKE_BINARY_DIR}/mrc-unit-test-rsrc.obj)
 
-		add_test(NAME unit-test COMMAND $<TARGET_FILE:mrc-unit-test> WORKING_DIRECTORY .)
-	else()
-		message(WARNING "No Catch2::Catch2WithMain target, something is wrong")
-	endif()
+	target_link_libraries(mrc-unit-test Catch2::Catch2WithMain)
+
+	add_test(NAME unit-test COMMAND $<TARGET_FILE:mrc-unit-test> WORKING_DIRECTORY .)
 endif()
 
 install(TARGETS mrc)
