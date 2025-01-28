@@ -32,7 +32,6 @@ include(CTest)
 set(CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(FETCH_CATCH2 OFF CACHE BOOL "Force using a private copy of catch2")
 
 if(MSVC)
 	# make msvc standards compliant...
@@ -91,9 +90,7 @@ target_link_libraries(mrc mcfp::mcfp)
 target_link_libraries(mrc-bootstrap mcfp::mcfp)
 
 if(BUILD_TESTING)
-	if(NOT FETCH_CATCH2)
-		find_package(Catch2 3 QUIET)
-	endif()
+	find_package(Catch2 3.8.0 QUIET)
 
 	if(NOT Catch2_FOUND)
 		Include(FetchContent)
@@ -107,16 +104,16 @@ if(BUILD_TESTING)
 		FetchContent_MakeAvailable(Catch2)
 	endif()
 
-	file(GLOB UNIT_TEST_RSRC LIST_DIRECTORIES true ${PROJECT_SOURCE_DIR}/rsrc/*)
-
-	add_custom_command(OUTPUT mrc-unit-test-rsrc.obj
-		COMMAND $<TARGET_FILE:mrc-bootstrap> -o mrc-unit-test-rsrc.obj ${UNIT_TEST_RSRC} ${COFF_SPEC}
-		DEPENDS ${UNIT_TEST_RSRC} mrc-bootstrap
-	)
-
-	add_executable(mrc-unit-test ${PROJECT_SOURCE_DIR}/src/mrc-unit-test.cpp ${CMAKE_BINARY_DIR}/mrc-unit-test-rsrc.obj)
-
 	if(TARGET Catch2::Catch2WithMain)
+		file(GLOB UNIT_TEST_RSRC LIST_DIRECTORIES true ${PROJECT_SOURCE_DIR}/rsrc/*)
+
+		add_custom_command(OUTPUT mrc-unit-test-rsrc.obj
+			COMMAND $<TARGET_FILE:mrc-bootstrap> -o mrc-unit-test-rsrc.obj ${UNIT_TEST_RSRC} ${COFF_SPEC}
+			DEPENDS ${UNIT_TEST_RSRC} mrc-bootstrap
+		)
+	
+		add_executable(mrc-unit-test ${PROJECT_SOURCE_DIR}/src/mrc-unit-test.cpp ${CMAKE_BINARY_DIR}/mrc-unit-test-rsrc.obj)
+
 		target_link_libraries(mrc-unit-test Catch2::Catch2WithMain)
 
 		add_test(NAME unit-test COMMAND $<TARGET_FILE:mrc-unit-test> WORKING_DIRECTORY .)
