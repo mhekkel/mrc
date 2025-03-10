@@ -27,7 +27,7 @@ mrc --header -o mrsrc.h
 
 Then include this file and use it:
 
-```c++
+```cpp
  #include "mrsrc.h"
  
  int main()
