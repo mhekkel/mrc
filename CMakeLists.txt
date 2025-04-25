@@ -63,7 +63,7 @@ if(WIN32)
 endif()
 
 set(CPM_USE_LOCAL_PACKAGES ON)
-CPMAddPackage("https://forge.hekkelman.net/maarten/mcfp.git@1.4.0")
+CPMAddPackage("https://forge.hekkelman.net/maarten/mcfp.git@1.4.1")
 
 include(VersionString)
 write_version_header(${PROJECT_SOURCE_DIR}/src/)
