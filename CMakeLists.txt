@@ -28,6 +28,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 project(mrc VERSION 1.3.15)
 
 include(CTest)
+include(CPM)
 
 set(CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD 20)
@@ -61,19 +62,8 @@ if(WIN32)
 	message(STATUS "Using COFF spec: ${COFF_SPEC}")
 endif()
 
-find_package(mcfp 1.3.5 QUIET)
-
-if(NOT mcfp_FOUND)
-	include(FetchContent)
-
-	FetchContent_Declare(
-		mcfp
-		GIT_REPOSITORY https://github.com/mhekkel/libmcfp
-		GIT_TAG v1.3.5
-	)
-
-	FetchContent_MakeAvailable(mcfp)
-endif()
+set(CPM_USE_LOCAL_PACKAGES ON)
+CPMAddPackage("https://forge.hekkelman.net/maarten/mcfp.git@1.4.0")
 
 include(VersionString)
 write_version_header(${PROJECT_SOURCE_DIR}/src/)
@@ -90,19 +80,7 @@ target_link_libraries(mrc mcfp::mcfp)
 target_link_libraries(mrc-bootstrap mcfp::mcfp)
 
 if(BUILD_TESTING)
-	find_package(Catch2 3 QUIET)
-
-	if(NOT Catch2_FOUND)
-		Include(FetchContent)
-
-		FetchContent_Declare(
-			Catch2
-			GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-			GIT_TAG v3.8.0 # or a later release
-		)
-
-		FetchContent_MakeAvailable(Catch2)
-	endif()
+	CPMAddPackage("gh:catchorg/Catch2@3.7.0")
 
 	file(GLOB UNIT_TEST_RSRC LIST_DIRECTORIES true ${PROJECT_SOURCE_DIR}/rsrc/*)
 
