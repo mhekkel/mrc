@@ -8,7 +8,7 @@ the main component using the cmake snippet:
 
 ```cmake
 # locate and include the mrc macro's
-find_package(Mrc)
+find_package(mrc)
 
 # write a header file
 mrc_write_header(${CMAKE_CURRENT_SOURCE_DIR}/mrsrc.hpp)

@@ -23,7 +23,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #[=======================================================================[.rst:
-FindMrc
+Findmrc
 -------
 
 The module defines the following variables:
@@ -43,7 +43,7 @@ Example usage:
 
 .. code-block:: cmake
 
-   find_package(Mrc)
+   find_package(mrc)
    if(mrc_FOUND)
      message("mrc found: ${MRC_EXECUTABLE}")
 
@@ -81,7 +81,7 @@ endif()
 unset(mrc_version)
 
 find_package(PackageHandleStandardArgs REQUIRED)
-find_package_handle_standard_args(Mrc
+find_package_handle_standard_args(mrc
 	REQUIRED_VARS MRC_EXECUTABLE
 	VERSION_VAR MRC_VERSION_STRING)
 
