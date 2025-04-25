@@ -132,6 +132,6 @@ else()
 	install(FILES doc/mrc.1 DESTINATION share/man/man1)
 endif()
 
-install(DIRECTORY examples DESTINATION share/doc/mrc/)
+install(DIRECTORY examples DESTINATION share/doc/mrc PATTERN build EXCLUDE)
 
 # add_subdirectory(examples/simple)

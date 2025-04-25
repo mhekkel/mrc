@@ -1,4 +1,4 @@
-find_package(Mrc)
+find_package(mrc)
 
 idf_component_register(SRCS esp-rsrc-app.cpp
                        INCLUDE_DIRS ".")

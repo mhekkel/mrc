@@ -60,7 +60,7 @@ mrc comes with a mrc-config.cmake file installed at a suitable location. This me
 project(hello VERSION 1.0.0 LANGUAGES CXX)
 
 # Include the mrc package file
-find_package(Mrc)
+find_package(mrc)
 
 # The MRC_FOUND variable is set if MRC was found
 if(NOT MRC_FOUND)
