@@ -80,7 +80,7 @@ target_link_libraries(mrc mcfp::mcfp)
 target_link_libraries(mrc-bootstrap mcfp::mcfp)
 
 if(BUILD_TESTING)
-	CPMAddPackage("gh:catchorg/Catch2@3.7.0")
+	CPMAddPackage("gh:catchorg/Catch2@3.5.0")
 
 	file(GLOB UNIT_TEST_RSRC LIST_DIRECTORIES true ${PROJECT_SOURCE_DIR}/rsrc/*)
 
