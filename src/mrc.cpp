@@ -1221,6 +1221,9 @@ int main(int argc, char *argv[])
 		elfc.elf_abi = ELFOSABI_FREEBSD;
 		int r = strlen(argv[0]);
 		strcpy(exePath, argv[0]);
+# elif __GNU__
+		elfc.elf_abi = ELFOSABI_GNU;
+		int r = readlink("/proc/self/exe", exePath, PATH_MAX);
 # else
 #  error "Unsupported OS, sorry..."
 # endif
