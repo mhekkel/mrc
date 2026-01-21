@@ -8,9 +8,9 @@ int main()
 	mrsrc::rsrc eerste("eerste");
 
 	if (eerste)
-		std::cout << std::string(eerste.data(), eerste.size()) << std::endl;
+		std::cout << std::string(eerste.data(), eerste.size()) << '\n';
 	else
-		std::cout << "not found" << std::endl;
+		std::cout << "not found" << '\n';
 	
 	mrsrc::rsrc error_rsrc("invalid");
 	assert(not error_rsrc);

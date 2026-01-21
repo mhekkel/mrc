@@ -53,7 +53,7 @@
 
     mrsrc rsrc;		// <- the root resource
     for (rsrc child: rsrc)
-        std::cout << child.name() << std::endl;
+        std::cout << child.name() << '\n';
 
     -------------------------------------------------
 
@@ -64,7 +64,7 @@
 
     std::string line;
     while (std::gettline(is, line))
-        std::cout << line << std::endl;
+        std::cout << line << '\n';
 
 */
 

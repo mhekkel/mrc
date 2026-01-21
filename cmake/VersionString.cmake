@@ -319,18 +319,18 @@ function(write_version_header dir)
 # 			if (not verbose)
 # 				return;
 			
-# 			os << '-' << std::endl;
+# 			os << '-' << '\n';
 # 		}
 
-# 		os << inst->m_name << " version " << inst->m_version << std::endl;
+# 		os << inst->m_name << " version " << inst->m_version << '\n';
 
 # 		if (verbose)
 # 		{
 # 			if (inst->m_build_number != 0)
 # 			{
-# 				os << "build: " << inst->m_build_number << ' ' << inst->m_revision_date << std::endl;
+# 				os << "build: " << inst->m_build_number << ' ' << inst->m_revision_date << '\n';
 # 				if (inst->m_git_tag[0] != 0)
-# 					os << "git tag: " << inst->m_git_tag << std::endl;
+# 					os << "git tag: " << inst->m_git_tag << '\n';
 # 			}
 # 		}
 # 	}

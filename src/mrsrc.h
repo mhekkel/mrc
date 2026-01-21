@@ -27,10 +27,8 @@
 #pragma once
 
 #include <cassert>
-#include <exception>
 #include <filesystem>
 #include <istream>
-#include <list>
 #include <string>
 
 /*
@@ -53,7 +51,7 @@
 
     mrsrc rsrc;		// <- the root resource
     for (rsrc child: rsrc)
-        std::cout << child.name() << std::endl;
+        std::cout << child.name() << '\n';
 
     -------------------------------------------------
 
@@ -64,7 +62,7 @@
 
     std::string line;
     while (std::gettline(is, line))
-        std::cout << line << std::endl;
+        std::cout << line << '\n';
 
 */
 
@@ -101,25 +99,14 @@ class rsrc
 	{
 	}
 
-	rsrc(const rsrc &other)
-		: m_impl(other.m_impl)
-	{
-	}
+	explicit rsrc(const std::filesystem::path &path);
 
-	rsrc &operator=(const rsrc &other)
-	{
-		m_impl = other.m_impl;
-		return *this;
-	}
+	rsrc(const rsrc &other) = default;
+	rsrc &operator=(const rsrc &other) = default;
 
-	rsrc(std::filesystem::path path);
-
-	std::string name() const { return m_impl ? gResourceName + m_impl->m_name : ""; }
-
-	const char *data() const { return m_impl ? gResourceData + m_impl->m_data : nullptr; }
-
-	unsigned long size() const { return m_impl ? m_impl->m_size : 0; }
-
+	[[nodiscard]] std::string name() const { return m_impl ? gResourceName + m_impl->m_name : ""; }
+	[[nodiscard]] const char *data() const { return m_impl ? gResourceData + m_impl->m_data : nullptr; }
+	[[nodiscard]] size_t size() const { return m_impl ? m_impl->m_size : 0; }
 	explicit operator bool() const { return m_impl != nullptr and m_impl->m_size > 0; }
 
 	template <typename RSRC>
@@ -132,21 +119,13 @@ class rsrc
 		using pointer = value_type *;
 		using reference = value_type &;
 
-		iterator_t(const rsrc_imp *cur)
+		explicit iterator_t(const rsrc_imp *cur)
 			: m_cur(cur)
 		{
 		}
 
-		iterator_t(const iterator_t &i)
-			: m_cur(i.m_cur)
-		{
-		}
-
-		iterator_t &operator=(const iterator_t &i)
-		{
-			m_cur = i.m_cur;
-			return *this;
-		}
+		iterator_t(const iterator_t &i) = default;
+		iterator_t &operator=(const iterator_t &i) = default;
 
 		reference operator*() { return m_cur; }
 		pointer operator->() { return &m_cur; }
@@ -176,7 +155,7 @@ class rsrc
 
 	using iterator = iterator_t<rsrc>;
 
-	iterator begin() const
+	[[nodiscard]] iterator begin() const
 	{
 		const rsrc_imp *impl = nullptr;
 		if (m_impl and m_impl->m_child)
@@ -184,13 +163,13 @@ class rsrc
 		return iterator(impl);
 	}
 
-	iterator end() const
+	[[nodiscard]] iterator end() const
 	{
 		return iterator(nullptr);
 	}
 
   private:
-	rsrc(const rsrc_imp *imp)
+	explicit rsrc(const rsrc_imp *imp)
 		: m_impl(imp)
 	{
 	}
@@ -198,7 +177,7 @@ class rsrc
 	const rsrc_imp *m_impl;
 };
 
-inline rsrc::rsrc(std::filesystem::path p)
+inline rsrc::rsrc(const std::filesystem::path &p)
 {
 	m_impl = gResourceIndex;
 
@@ -234,21 +213,21 @@ template <typename CharT, typename Traits>
 class basic_streambuf : public std::basic_streambuf<CharT, Traits>
 {
   public:
-	typedef CharT char_type;
-	typedef Traits traits_type;
-	typedef typename traits_type::int_type int_type;
-	typedef typename traits_type::pos_type pos_type;
-	typedef typename traits_type::off_type off_type;
+	using char_type = CharT;
+	using traits_type = Traits;
+	using int_type = typename traits_type::int_type;
+	using pos_type = typename traits_type::pos_type;
+	using off_type = typename traits_type::off_type;
 
 	/// \brief constructor taking a \a path to the resource in memory
-	basic_streambuf(const std::string &path)
+	explicit basic_streambuf(const std::string &path)
 		: m_rsrc(path)
 	{
 		init();
 	}
 
 	/// \brief constructor taking a \a rsrc
-	basic_streambuf(const rsrc &rsrc)
+	explicit basic_streambuf(const rsrc &rsrc)
 		: m_rsrc(rsrc)
 	{
 		init();
@@ -256,20 +235,20 @@ class basic_streambuf : public std::basic_streambuf<CharT, Traits>
 
 	basic_streambuf(const basic_streambuf &) = delete;
 
-	basic_streambuf(basic_streambuf &&rhs)
+	basic_streambuf(basic_streambuf &&rhs) noexcept
 		: basic_streambuf(rhs.m_rsrc)
 	{
 	}
 
 	basic_streambuf &operator=(const basic_streambuf &) = delete;
 
-	basic_streambuf &operator=(basic_streambuf &&rhs)
+	basic_streambuf &operator=(basic_streambuf &&rhs) noexcept
 	{
 		swap(rhs);
 		return *this;
 	}
 
-	void swap(basic_streambuf &rhs)
+	void swap(basic_streambuf &rhs) noexcept
 	{
 		std::swap(m_begin, rhs.m_begin);
 		std::swap(m_end, rhs.m_end);
@@ -277,7 +256,7 @@ class basic_streambuf : public std::basic_streambuf<CharT, Traits>
 	}
 
 	/// \brief Analogous to is_open of an ifstream_buffer, return true if the resource is valid
-	bool is_valid() const
+	[[nodiscard]] bool is_valid() const
 	{
 		return static_cast<bool>(m_rsrc);
 	}
@@ -293,7 +272,8 @@ class basic_streambuf : public std::basic_streambuf<CharT, Traits>
 		}
 	}
 
-	int_type underflow()
+  protected:
+	int_type underflow() override
 	{
 		if (m_current == m_end)
 			return traits_type::eof();
@@ -301,7 +281,7 @@ class basic_streambuf : public std::basic_streambuf<CharT, Traits>
 		return traits_type::to_int_type(*m_current);
 	}
 
-	int_type uflow()
+	int_type uflow() override
 	{
 		if (m_current == m_end)
 			return traits_type::eof();
@@ -309,7 +289,7 @@ class basic_streambuf : public std::basic_streambuf<CharT, Traits>
 		return traits_type::to_int_type(*m_current++);
 	}
 
-	int_type pbackfail(int_type ch)
+	int_type pbackfail(int_type ch) override
 	{
 		if (m_current == m_begin or (ch != traits_type::eof() and ch != m_current[-1]))
 			return traits_type::eof();
@@ -317,13 +297,13 @@ class basic_streambuf : public std::basic_streambuf<CharT, Traits>
 		return traits_type::to_int_type(*--m_current);
 	}
 
-	std::streamsize showmanyc()
+	std::streamsize showmanyc() override
 	{
-		assert(std::less_equal<const char *>()(m_current, m_end));
+		assert(m_current <= m_end);
 		return m_end - m_current;
 	}
 
-	pos_type seekoff(off_type off, std::ios_base::seekdir dir, std::ios_base::openmode /*which*/)
+	pos_type seekoff(off_type off, std::ios_base::seekdir dir, std::ios_base::openmode /*which*/) override
 	{
 		switch (dir)
 		{
@@ -352,7 +332,7 @@ class basic_streambuf : public std::basic_streambuf<CharT, Traits>
 		return m_current - m_begin;
 	}
 
-	pos_type seekpos(pos_type pos, std::ios_base::openmode /*which*/)
+	pos_type seekpos(pos_type pos, std::ios_base::openmode /*which*/) override
 	{
 		m_current = m_begin + pos;
 
@@ -381,61 +361,61 @@ template <typename CharT, typename Traits>
 class basic_istream : public std::basic_istream<CharT, Traits>
 {
   public:
-	typedef CharT char_type;
-	typedef Traits traits_type;
-	typedef typename traits_type::int_type int_type;
-	typedef typename traits_type::pos_type pos_type;
-	typedef typename traits_type::off_type off_type;
+	using char_type = CharT;
+	using traits_type = Traits;
+	using int_type = typename traits_type::int_type;
+	using pos_type = typename traits_type::pos_type;
+	using off_type = typename traits_type::off_type;
 
   private:
-	using __streambuf_type = basic_streambuf<CharT, Traits>;
-	using __istream_type = std::basic_istream<CharT, Traits>;
+	using rsrc_streambuf_type = basic_streambuf<CharT, Traits>;
+	using rsrc_istream_type = std::basic_istream<CharT, Traits>;
 
-	__streambuf_type m_buffer;
+	rsrc_streambuf_type m_buffer;
 
   public:
-	basic_istream(const std::string &path)
+	explicit basic_istream(const std::string &path)
 		: basic_istream(rsrc(path))
 	{
 	}
 
-	basic_istream(const rsrc &resource)
-		: __istream_type(&m_buffer)
+	explicit basic_istream(const rsrc &resource)
+		: rsrc_istream_type(&m_buffer)
 		, m_buffer(resource)
 	{
 		if (resource)
 			this->init(&m_buffer);
 		else
-			__istream_type::setstate(std::ios_base::badbit);
+			rsrc_istream_type::setstate(std::ios_base::badbit);
 	}
 
 	basic_istream(const basic_istream &) = delete;
 
-	basic_istream(basic_istream &&rhs)
-		: __istream_type(std::move(rhs))
+	basic_istream(basic_istream &&rhs) noexcept
+		: rsrc_istream_type(std::move(rhs))
 		, m_buffer(std::move(rhs.m_buffer))
 	{
-		__istream_type::set_rdbuf(&m_buffer);
+		rsrc_istream_type::set_rdbuf(&m_buffer);
 	}
 
 	basic_istream &operator=(const basic_istream &) = delete;
 
-	basic_istream &operator=(basic_istream &&rhs)
+	basic_istream &operator=(basic_istream &&rhs) noexcept
 	{
-		__istream_type::operator=(std::move(rhs));
+		rsrc_istream_type::operator=(std::move(rhs));
 		m_buffer = std::move(rhs.m_buffer);
 		return *this;
 	}
 
-	void swap(basic_istream &rhs)
+	void swap(basic_istream &rhs) noexcept
 	{
-		__istream_type::swap(rhs);
+		rsrc_istream_type::swap(rhs);
 		m_buffer.swap(rhs.m_buffer);
 	}
 
-	__streambuf_type *rdbuf() const
+	rsrc_streambuf_type *rdbuf() const
 	{
-		return const_cast<__streambuf_type *>(&m_buffer);
+		return const_cast<rsrc_streambuf_type *>(&m_buffer);
 	}
 };
 

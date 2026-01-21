@@ -16,7 +16,7 @@ int main()
 			throw std::runtime_error("Resource not found");
 		
 		std::cout.write(res.data(), res.size());
-		std::cout << std::endl;
+		std::cout << '\n';
 	}
 	catch(const std::exception& e)
 	{

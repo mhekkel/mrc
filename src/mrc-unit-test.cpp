@@ -85,7 +85,7 @@ TEST_CASE("test_10", "test_10")
 	if (found != kTest)
 	{
 		for (auto &f : found)
-			std::cout << f << std::endl;
+			std::cout << f << '\n';
 	}
 }
 

@@ -34,6 +34,7 @@
 //
 //	This will create an object file called myrsrs.o containing the data for all file found in the rsrc/ directory.
 
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -44,14 +45,14 @@
 # define EM_NONE 0
 #endif
 
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-
-#include <mcfp/mcfp.hpp>
-
 #include "mrsrc.h"
 #include "revision.hpp"
+
+#include <fcntl.h>
+#include <mcfp/mcfp.hpp>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <utility>
 
 #ifndef PATH_MAX
 # define PATH_MAX 1024
@@ -109,10 +110,10 @@ struct elf_config
 struct MObjectFileImp
 {
 	fs::path mFile;
-	uint32_t mTextSize;
-	uint32_t mDataSize;
+	uint32_t mTextSize{};
+	uint32_t mDataSize{};
 
-	virtual ~MObjectFileImp() {}
+	virtual ~MObjectFileImp() = default;
 
 	virtual void Write(std::ofstream &inFile) = 0;
 
@@ -127,7 +128,7 @@ struct MObjectFileImp
 		std::string data;
 	};
 
-	typedef std::vector<MGlobal> MGlobals;
+	using MGlobals = std::vector<MGlobal>;
 
 	MGlobals mGlobals;
 };
@@ -204,19 +205,19 @@ template <>
 inline uint64_t swapper::operator()(uint64_t inValue) const
 {
 	return static_cast<uint64_t>(
-		((((uint64_t)inValue) << 56) & 0xFF00000000000000ULL) |
-		((((uint64_t)inValue) << 40) & 0x00FF000000000000ULL) |
-		((((uint64_t)inValue) << 24) & 0x0000FF0000000000ULL) |
-		((((uint64_t)inValue) << 8) & 0x000000FF00000000ULL) |
-		((((uint64_t)inValue) >> 8) & 0x00000000FF000000ULL) |
-		((((uint64_t)inValue) >> 24) & 0x0000000000FF0000ULL) |
-		((((uint64_t)inValue) >> 40) & 0x000000000000FF00ULL) |
-		((((uint64_t)inValue) >> 56) & 0x00000000000000FFULL));
+		((inValue << 56) & 0xFF00000000000000ULL) |
+		((inValue << 40) & 0x00FF000000000000ULL) |
+		((inValue << 24) & 0x0000FF0000000000ULL) |
+		((inValue << 8) & 0x000000FF00000000ULL) |
+		((inValue >> 8) & 0x00000000FF000000ULL) |
+		((inValue >> 24) & 0x0000000000FF0000ULL) |
+		((inValue >> 40) & 0x000000000000FF00ULL) |
+		((inValue >> 56) & 0x00000000000000FFULL));
 }
 
 #if defined(LITTLE_ENDIAN)
-typedef no_swapper lsb_swapper;
-typedef swapper msb_swapper;
+using lsb_swapper = no_swapper;
+using msb_swapper = swapper;
 #elif defined(BIG_ENDIAN)
 typedef swapper lsb_swapper;
 typedef no_swapper msb_swapper;
@@ -300,7 +301,7 @@ struct MELFObjectFileImp : public MObjectFileImp
 	using Elf_Word = typename ElfClass<ELF_CLASSXX>::Elf_Word;
 	using Elf_Half = typename ElfClass<ELF_CLASSXX>::Elf_Half;
 
-	virtual void Write(std::ofstream &inFile) override;
+	void Write(std::ofstream &inFile) override;
 
 	MELFObjectFileImp(int machine, uint8_t elf_abi, int flags)
 		: MObjectFileImp()
@@ -477,15 +478,15 @@ void MELFObjectFileImp<ELF_CLASSXX, ELF_DATAXX>::Write(std::ofstream &f)
 			// kShStrtabSection
 		    // sh_name
 			AddNameToNameTable(shstrtab, ".shstrtab"),
-			SHT_STRTAB,                    // sh_type
-			0,                             // sh_flags
-			0,                             // sh_addr
-			shstrtab_off,                  // sh_offset
-			Elf32_Word(shstrtab.length()), // sh_size
-			0,                             // sh_link
-			0,                             // sh_info
-			1,                             // sh_addralign
-			0                              // sh_entsize
+			SHT_STRTAB,                                 // sh_type
+			0,                                          // sh_flags
+			0,                                          // sh_addr
+			shstrtab_off,                               // sh_offset
+			static_cast<Elf32_Word>(shstrtab.length()), // sh_size
+			0,                                          // sh_link
+			0,                                          // sh_info
+			1,                                          // sh_addralign
+			0                                           // sh_entsize
 		},
 		{
 			// kSymtabSection
@@ -509,13 +510,13 @@ void MELFObjectFileImp<ELF_CLASSXX, ELF_DATAXX>::Write(std::ofstream &f)
 			SHT_STRTAB, // sh_type
 		                // sh_flags
 			0,
-			0,                           // sh_addr
-			strtab_off,                  // sh_offset
-			Elf32_Word(strtab.length()), // sh_size
-			0,                           // sh_link
-			0,                           // sh_info
-			1,                           // sh_addralign
-			0                            // sh_entsize
+			0,                                        // sh_addr
+			strtab_off,                               // sh_offset
+			static_cast<Elf32_Word>(strtab.length()), // sh_size
+			0,                                        // sh_link
+			0,                                        // sh_info
+			1,                                        // sh_addralign
+			0                                         // sh_entsize
 		},
 		{
 			// kStrtabSection
@@ -589,11 +590,11 @@ enum COFF_StorageClass : uint8_t
 struct COFF_Header
 {
 	uint16_t machine = IMAGE_FILE_MACHINE_AMD64;
-	uint16_t numberOfSections;
+	uint16_t numberOfSections{};
 	uint32_t timeDateStamp = 0;
-	uint32_t pointerToSymbolTable;
-	uint32_t numberOfSymbols;
-	uint16_t sizeOfOptionalHeader;
+	uint32_t pointerToSymbolTable{};
+	uint32_t numberOfSymbols{};
+	uint16_t sizeOfOptionalHeader{};
 	uint16_t characteristics = 0;
 };
 
@@ -612,15 +613,15 @@ static_assert(sizeof(COFF_Header) == 20, "COFF_Header size should be 20 bytes");
 struct COFF_SectionHeader
 {
 	COFF_Name name;
-	uint32_t virtualSize;
-	uint32_t virtualAddress;
-	uint32_t sizeOfRawData;
-	uint32_t pointerToRawData;
-	uint32_t pointerToRelocations;
-	uint32_t pointerToLineNumbers;
-	uint16_t numberOfRelocations;
-	uint16_t numberOfLineNumbers;
-	uint32_t characteristics;
+	uint32_t virtualSize{};
+	uint32_t virtualAddress{};
+	uint32_t sizeOfRawData{};
+	uint32_t pointerToRawData{};
+	uint32_t pointerToRelocations{};
+	uint32_t pointerToLineNumbers{};
+	uint16_t numberOfRelocations{};
+	uint16_t numberOfLineNumbers{};
+	uint32_t characteristics{};
 };
 
 static_assert(sizeof(COFF_SectionHeader) == 40, "Section headers should be 40 bytes");
@@ -652,9 +653,9 @@ struct MCOFFObjectFileImp : public MObjectFileImp
 {
 	using swapper = Swap::lsb_swapper;
 
-	virtual void Write(std::ofstream &inFile) override;
+	void Write(std::ofstream &inFile) override;
 
-	MCOFFObjectFileImp(uint16_t machine)
+	explicit MCOFFObjectFileImp(uint16_t machine)
 		: MObjectFileImp()
 		, mMachine(machine)
 	{
@@ -790,7 +791,7 @@ void MCOFFObjectFileImp::Write(std::ofstream &f)
 	for (auto &sym : symbols)
 		WriteDataAligned(f, &sym, 18);
 
-	uint32_t strTabSize = static_cast<uint32_t>(strtab.size() + 4);
+	auto strTabSize = static_cast<uint32_t>(strtab.size() + 4);
 	WriteDataAligned(f, &strTabSize, sizeof(strTabSize));
 	WriteDataAligned(f, strtab.data(), static_cast<uint32_t>(strtab.size() + 1));
 
@@ -823,7 +824,7 @@ MObjectFileImp *MObjectFileImp::Create(elf_config elfc)
 		result = new MELFObjectFileImp<ELFCLASS64, ELFDATA2MSB>(elfc.elf_machine, elfc.elf_abi, elfc.elf_flags);
 	else
 	{
-		std::cerr << "Unsupported ELF class and/or data " << elfc.elf_class << ", " << elfc.elf_data << std::endl;
+		std::cerr << "Unsupported ELF class and/or data " << elfc.elf_class << ", " << elfc.elf_data << '\n';
 		exit(1);
 	}
 
@@ -837,13 +838,13 @@ class MObjectFile
 {
   public:
 #if __has_include(<elf.h>)
-	MObjectFile(elf_config elfc)
+	explicit MObjectFile(elf_config elfc)
 		: mImpl(MObjectFileImp::Create(elfc))
 	{
 	}
 #endif
 
-	MObjectFile(uint16_t machine)
+	explicit MObjectFile(uint16_t machine)
 		: mImpl(new MCOFFObjectFileImp(machine))
 	{
 	}
@@ -883,8 +884,8 @@ void MObjectFile::Write(std::ofstream &inFile)
 class MResourceFile
 {
   public:
-	MResourceFile(const std::string &prefix)
-		: mPrefix(prefix)
+	explicit MResourceFile(std::string prefix)
+		: mPrefix(std::move(prefix))
 	{
 		mIndex.push_back({});
 		mName.push_back(0);
@@ -894,20 +895,20 @@ class MResourceFile
 	void Add(const fs::path &inPath, const fs::path &inFile);
 
   private:
-	void AddEntry(fs::path inPath, const char *inData, uint32_t inSize);
+	void AddEntry(const fs::path &inPath, const char *inData, uint32_t inSize);
 
 	std::vector<mrsrc::rsrc_imp> mIndex;
 	std::vector<char> mData, mName;
 	std::string mPrefix;
 };
 
-void MResourceFile::AddEntry(fs::path inPath, const char *inData, uint32_t inSize)
+void MResourceFile::AddEntry(const fs::path &inPath, const char *inData, uint32_t inSize)
 {
 	uint32_t node = 0; // start at root
 
-	for (fs::path::iterator p = inPath.begin(); p != inPath.end(); ++p)
+	for (const auto &p : inPath)
 	{
-		if (*p == ".") // flatten
+		if (p == ".") // flatten
 			continue;
 
 		// no such child? Add it and continue
@@ -917,8 +918,7 @@ void MResourceFile::AddEntry(fs::path inPath, const char *inData, uint32_t inSiz
 
 			child.m_name = static_cast<uint32_t>(mName.size());
 
-			std::string n = p->string();
-			copy(n.begin(), n.end(), std::back_inserter(mName));
+			std::ranges::copy(p.string(), std::back_inserter(mName));
 			mName.push_back(0);
 
 			mIndex[node].m_child = static_cast<uint32_t>(mIndex.size());
@@ -935,7 +935,7 @@ void MResourceFile::AddEntry(fs::path inPath, const char *inData, uint32_t inSiz
 			const char *name = mName.data() + mIndex[next].m_name;
 
 			// if this is the one we're looking for, break out of the loop
-			if (*p == name)
+			if (p == name)
 			{
 				node = next;
 				break;
@@ -953,8 +953,7 @@ void MResourceFile::AddEntry(fs::path inPath, const char *inData, uint32_t inSiz
 
 			n.m_name = static_cast<uint32_t>(mName.size());
 
-			std::string s = p->string();
-			copy(s.begin(), s.end(), back_inserter(mName));
+			std::ranges::copy(p.string(), back_inserter(mName));
 			mName.push_back(0);
 
 			node = static_cast<uint32_t>(mIndex.size());
@@ -993,7 +992,7 @@ void MResourceFile::Add(const fs::path &inPath, const fs::path &inFile)
 	else
 	{
 		if (VERBOSE > 0)
-			std::cerr << "adding " << inFile << " as " << inPath / inFile.filename() << std::endl;
+			std::cerr << "adding " << inFile << " as " << inPath / inFile.filename() << '\n';
 
 		std::ifstream f(inFile, std::ios::binary);
 
@@ -1025,18 +1024,17 @@ void MResourceFile::Write(MObjectFile &obj)
 
 #if __has_include(<elf.h>)
 
-elf_config get_elf_options(std::filesystem::path object_file)
+elf_config get_elf_options(const std::filesystem::path &object_file)
 {
 	elf_config elfc{};
 
-	int fd = open(object_file.c_str(), O_RDONLY);
-	
+	int fd = open(object_file.c_str(), O_RDONLY); // NOLINT(hicpp-vararg)
+
 	if (fd < 0)
 	{
 		std::cerr << "Error opening template file " << std::quoted(object_file.string()) << '\n';
 		exit(1);
 	}
-
 
 	unsigned char e_ident[16];
 
@@ -1060,7 +1058,7 @@ elf_config get_elf_options(std::filesystem::path object_file)
 				if (read(fd, &hdr, sizeof(hdr)) == sizeof(Elf32_Ehdr))
 				{
 					elfc.elf_machine = hdr.e_machine;
-					elfc.elf_flags = hdr.e_flags;
+					elfc.elf_flags = static_cast<int>(hdr.e_flags);
 				}
 				break;
 			}
@@ -1071,13 +1069,13 @@ elf_config get_elf_options(std::filesystem::path object_file)
 				if (read(fd, &hdr, sizeof(hdr)) == sizeof(Elf64_Ehdr))
 				{
 					elfc.elf_machine = hdr.e_machine;
-					elfc.elf_flags = hdr.e_flags;
+					elfc.elf_flags = static_cast<int>(hdr.e_flags);
 				}
 				break;
 			}
 
 			default:
-				std::cerr << "Unknown ELF class" << std::endl;
+				std::cerr << "Unknown ELF class" << '\n';
 		}
 	}
 
@@ -1120,7 +1118,7 @@ int main(int argc, char *argv[])
 	config.parse(argc, argv, ec);
 	if (ec)
 	{
-		std::cerr << ec.message() << std::endl;
+		std::cerr << ec.message() << '\n';
 		exit(1);
 	}
 
@@ -1130,119 +1128,125 @@ int main(int argc, char *argv[])
 		exit(0);
 	}
 
-	if (config.has("header"))
+	try
 	{
-		mrsrc::rsrc data("mrsrc.h");
-
-		std::string text(data.data(), data.size());
-
-		if (config.has("output"))
+		if (config.has("header"))
 		{
-			std::ofstream file(config.get<std::string>("output"), std::ios::binary);
-			if (not file.is_open())
-				throw std::runtime_error("Could not open output file for writing");
-			file << text << std::endl;
-		}
-		else
-			std::cout << text << std::endl;
+			mrsrc::rsrc data("mrsrc.h");
 
-		exit(0);
-	}
+			std::string text(data.data(), data.size());
 
-	if (config.has("help") or config.operands().empty() or not config.has("output"))
-	{
-		std::cout << config << std::endl;
-		exit(config.has("help") ? 0 : 1);
-	}
-
-	VERBOSE = config.count("verbose");
-
-	if (config.has("depends"))
-	{
-		std::vector<std::string> files;
-
-		for (auto p : config.operands())
-		{
-			if (fs::is_directory(p))
+			if (config.has("output"))
 			{
-				for (auto i = fs::recursive_directory_iterator(p); i != fs::recursive_directory_iterator(); ++i)
-					files.emplace_back(i->path().string());
+				std::ofstream file(config.get<std::string>("output"), std::ios::binary);
+				if (not file.is_open())
+					throw std::runtime_error("Could not open output file for writing");
+				file << text << '\n';
 			}
 			else
-				files.emplace_back(p);
+				std::cout << text << '\n';
+
+			exit(0);
 		}
 
-		std::ofstream depends(config.get("depends"));
-		if (not depends.is_open())
-			throw std::runtime_error("Could not open depends file for output");
-
-		depends << config.get("output") << ": ";
-		for (size_t i = 0; i < files.size(); ++i)
+		if (config.has("help") or config.operands().empty() or not config.has("output"))
 		{
-			auto &file = files[i];
+			std::cout << config << '\n';
+			exit(config.has("help") ? 0 : 1);
+		}
 
-			for (char c : { ' ', '$', '#' })
+		VERBOSE = config.count("verbose");
+
+		if (config.has("depends"))
+		{
+			std::vector<std::string> files;
+
+			for (const auto &p : config.operands())
 			{
-				for (auto s = file.find(c); s != std::string::npos; s = file.find(c, s))
+				if (fs::is_directory(p))
 				{
-					file.insert(file.begin() + s, '\\');
-					s += 2;
+					for (auto i = fs::recursive_directory_iterator(p); i != fs::recursive_directory_iterator(); ++i)
+						files.emplace_back(i->path().string());
 				}
+				else
+					files.emplace_back(p);
 			}
 
-			depends << files[i];
-			if (i + 1 < files.size())
-				depends << " \\\n\t";
+			std::ofstream depends(config.get("depends"));
+			if (not depends.is_open())
+				throw std::runtime_error("Could not open depends file for output");
+
+			depends << config.get("output") << ": ";
+			for (size_t i = 0; i < files.size(); ++i)
+			{
+				auto &file = files[i];
+
+				for (char c : { ' ', '$', '#' })
+				{
+					for (auto s = file.find(c); s != std::string::npos; s = file.find(c, s))
+					{
+						file.insert(file.begin() + static_cast<std::string::difference_type>(s), '\\');
+						s += 2;
+					}
+				}
+
+				depends << files[i];
+				if (i + 1 < files.size())
+					depends << " \\\n\t";
+			}
+
+			depends << "\n";
+			depends.close();
+
+			exit(0);
 		}
 
-		depends << "\n";
-		depends.close();
+		// --------------------------------------------------------------------
+		// find out the required ELF format.
 
-		exit(0);
-	}
-
-	// --------------------------------------------------------------------
-	// find out the required ELF format.
-
-	elf_config elfc{};
+		elf_config elfc{};
 
 #if not defined(_WIN32)
-	// Use a template, if specified
-	if (config.has("elf-template"))
-		elfc = get_elf_options(config.get<std::string>("elf-template"));
-	// use ourselves otherwise
-	else
-	{
-		char exePath[PATH_MAX + 1];
+		// Use a template, if specified
+		if (config.has("elf-template"))
+			elfc = get_elf_options(config.get<std::string>("elf-template"));
+		// use ourselves otherwise
+		else
+		{
+			char exePath[PATH_MAX + 1];
 # if __linux or __linux__
-		elfc.elf_abi = ELFOSABI_LINUX;
-		int r = readlink("/proc/self/exe", exePath, PATH_MAX);
+			elfc.elf_abi = ELFOSABI_LINUX;
+			auto r = readlink("/proc/self/exe", exePath, PATH_MAX);
 # elif __FreeBSD__
+<<<<<<< Updated upstream
 		elfc.elf_abi = ELFOSABI_FREEBSD;
 		int r = strlen(argv[0]);
 		strcpy(exePath, argv[0]);
 # elif __GNU__
 		elfc.elf_abi = ELFOSABI_GNU;
 		int r = readlink("/proc/self/exe", exePath, PATH_MAX);
+=======
+			elfc.elf_abi = ELFOSABI_FREEBSD;
+			int r = strlen(argv[0]);
+			strcpy(exePath, argv[0]);
+>>>>>>> Stashed changes
 # else
 #  error "Unsupported OS, sorry..."
 # endif
-		if (r > 0)
-		{
-			exePath[r] = 0; // The NULL is not written by readlink
-			elfc = get_elf_options(exePath);
+			if (r > 0)
+			{
+				exePath[r] = 0; // The NULL is not written by readlink
+				elfc = get_elf_options(exePath);
+			}
 		}
-	}
 #endif
 
-	std::string ns;
-	if (config.has("root"))
-		ns = config.get<std::string>("root");
+		std::string ns;
+		if (config.has("root"))
+			ns = config.get<std::string>("root");
 
-	std::string prefix = config.get<std::string>("resource-prefix");
+		std::string prefix = config.get<std::string>("resource-prefix");
 
-	try
-	{
 		MResourceFile rsrcFile(prefix);
 
 		for (fs::path i : config.operands())
@@ -1312,7 +1316,7 @@ int main(int argc, char *argv[])
 	}
 	catch (const std::exception &ex)
 	{
-		std::cerr << "Error executing mrc: " << ex.what() << std::endl;
+		std::cerr << "Error executing mrc: " << ex.what() << '\n';
 		exit(1);
 	}
 

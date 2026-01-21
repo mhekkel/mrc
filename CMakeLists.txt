@@ -54,12 +54,12 @@ if(WIN32)
 	elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "ARM64")
 		set(COFF_TYPE "arm64")
 	else()
-		message(FATAL_ERROR "Unsupported or unknown processor type ${CMAKE_SYSTEM_PROCESSOR}")
+		message(FATAL_ERROR "mrc: Unsupported or unknown processor type ${CMAKE_SYSTEM_PROCESSOR}")
 	endif()
 
 	set(COFF_SPEC "--coff=${COFF_TYPE}")
 
-	message(STATUS "Using COFF spec: ${COFF_SPEC}")
+	message(STATUS "mrc: Using COFF spec: ${COFF_SPEC}")
 endif()
 
 set(CPM_USE_LOCAL_PACKAGES ON)
@@ -96,7 +96,7 @@ if(BUILD_TESTING)
 
 		add_test(NAME unit-test COMMAND $<TARGET_FILE:mrc-unit-test> WORKING_DIRECTORY .)
 	else()
-		message(WARNING "No Catch2::Catch2WithMain target, something is wrong")
+		message(WARNING "mrc: No Catch2::Catch2WithMain target, something is wrong")
 	endif()
 endif()
 
