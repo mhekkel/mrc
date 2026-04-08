@@ -1,3 +1,6 @@
+Version 1.3.17
+- Fix includes (IWYU)
+
 Version 1.3.16
 - Added support for GNU/Hurd (thanks to  Pino Toscano)
 

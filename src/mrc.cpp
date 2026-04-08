@@ -34,25 +34,30 @@
 //
 //	This will create an object file called myrsrs.o containing the data for all file found in the rsrc/ directory.
 
-#include <algorithm>
-#include <filesystem>
+#include "mrsrc.h"
+#include "revision.hpp"
+
+#include <climits>
+#include <cstdint>
+#include <cstdlib>
+#include <endian.h>
+#include <exception>
+#include <fcntl.h>
 #include <fstream>
+#include <initializer_list>
+#include <iomanip>
 #include <iostream>
+#include <iterator>
+#include <mcfp/mcfp.hpp>
+#include <stdexcept>
+#include <string>
+#include <unistd.h>
 
 #if __has_include(<elf.h>)
 # include <elf.h>
 #elif not defined(EM_NONE)
 # define EM_NONE 0
 #endif
-
-#include "mrsrc.h"
-#include "revision.hpp"
-
-#include <fcntl.h>
-#include <mcfp/mcfp.hpp>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <utility>
 
 #ifndef PATH_MAX
 # define PATH_MAX 1024
@@ -1218,21 +1223,20 @@ int main(int argc, char *argv[])
 			elfc.elf_abi = ELFOSABI_LINUX;
 			auto r = readlink("/proc/self/exe", exePath, PATH_MAX);
 # elif __FreeBSD__
-<<<<<<< Updated upstream
-		elfc.elf_abi = ELFOSABI_FREEBSD;
-		int r = strlen(argv[0]);
-		strcpy(exePath, argv[0]);
+			< < < < < < < Updated upstream elfc.elf_abi = ELFOSABI_FREEBSD;
+			int r = strlen(argv[0]);
+			strcpy(exePath, argv[0]);
 # elif __GNU__
-		elfc.elf_abi = ELFOSABI_GNU;
-		int r = readlink("/proc/self/exe", exePath, PATH_MAX);
+			elfc.elf_abi = ELFOSABI_GNU;
+			int r = readlink("/proc/self/exe", exePath, PATH_MAX);
 =======
 			elfc.elf_abi = ELFOSABI_FREEBSD;
 			int r = strlen(argv[0]);
 			strcpy(exePath, argv[0]);
 >>>>>>> Stashed changes
-# else
-#  error "Unsupported OS, sorry..."
-# endif
+#else
+# error "Unsupported OS, sorry..."
+#endif
 			if (r > 0)
 			{
 				exePath[r] = 0; // The NULL is not written by readlink
@@ -1311,7 +1315,7 @@ int main(int argc, char *argv[])
 			obj.Write(file);
 		}
 #else
-			throw std::runtime_error("Could not create resource file, probably you're trying to create a ELF resource file on Windows?");
+		throw std::runtime_error("Could not create resource file, probably you're trying to create a ELF resource file on Windows?");
 #endif
 	}
 	catch (const std::exception &ex)
