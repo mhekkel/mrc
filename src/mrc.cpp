@@ -1223,17 +1223,15 @@ int main(int argc, char *argv[])
 			elfc.elf_abi = ELFOSABI_LINUX;
 			auto r = readlink("/proc/self/exe", exePath, PATH_MAX);
 # elif __FreeBSD__
-			< < < < < < < Updated upstream elfc.elf_abi = ELFOSABI_FREEBSD;
+			elfc.elf_abi = ELFOSABI_FREEBSD;
 			int r = strlen(argv[0]);
 			strcpy(exePath, argv[0]);
 # elif __GNU__
 			elfc.elf_abi = ELFOSABI_GNU;
 			int r = readlink("/proc/self/exe", exePath, PATH_MAX);
-=======
 			elfc.elf_abi = ELFOSABI_FREEBSD;
 			int r = strlen(argv[0]);
 			strcpy(exePath, argv[0]);
->>>>>>> Stashed changes
 #else
 # error "Unsupported OS, sorry..."
 #endif
