@@ -3,3 +3,4 @@
 src/revision.hpp
 src/version.hpp
 **/sdkconfig*
+.cache/
