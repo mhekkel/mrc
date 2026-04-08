@@ -40,7 +40,6 @@
 #include <climits>
 #include <cstdint>
 #include <cstdlib>
-#include <endian.h>
 #include <exception>
 #include <fcntl.h>
 #include <fstream>
@@ -51,7 +50,11 @@
 #include <mcfp/mcfp.hpp>
 #include <stdexcept>
 #include <string>
-#include <unistd.h>
+
+#ifndef WIN32
+# include <endian.h>
+# include <unistd.h>
+#endif
 
 #if __has_include(<elf.h>)
 # include <elf.h>
@@ -1232,9 +1235,9 @@ int main(int argc, char *argv[])
 			elfc.elf_abi = ELFOSABI_FREEBSD;
 			int r = strlen(argv[0]);
 			strcpy(exePath, argv[0]);
-#else
-# error "Unsupported OS, sorry..."
-#endif
+# else
+#  error "Unsupported OS, sorry..."
+# endif
 			if (r > 0)
 			{
 				exePath[r] = 0; // The NULL is not written by readlink
@@ -1313,7 +1316,7 @@ int main(int argc, char *argv[])
 			obj.Write(file);
 		}
 #else
-		throw std::runtime_error("Could not create resource file, probably you're trying to create a ELF resource file on Windows?");
+			throw std::runtime_error("Could not create resource file, probably you're trying to create a ELF resource file on Windows?");
 #endif
 	}
 	catch (const std::exception &ex)
