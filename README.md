@@ -1,4 +1,5 @@
-[![github CI](https://github.com/mhekkel/mrc/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/mhekkel/mrc/actions)
+[![github CI](https://forge.hekkelman.net/maarten/mrc/actions/workflows/build-and-test-debian.yml/badge.svg)](https://forge.hekkelman.net/maarten/mrc/actions)
+[![github CI](https://forge.hekkelman.net/maarten/mrc/actions/workflows/build-and-test-freebsd.yml/badge.svg)](https://forge.hekkelman.net/maarten/mrc/actions)
 
 Maartens Resource Compiler
 ==========================
@@ -84,7 +85,7 @@ Building mrc
 To build mrc, you should use [cmake](https://cmake.org):
 
 ```console
-git clone https://github.com/mhekkel/mrc.git
+git clone https://forge.hekkelman.net/maarten/mrc.git
 cd mrc
 cmake -S . -B build
 cmake --build build
